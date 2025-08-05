@@ -4,17 +4,19 @@ import { useAuth } from "@/lib/auth-context"
 import { useEffect, useState } from "react"
 import { database } from "@/lib/firebase"
 import { ref, onValue } from "firebase/database"
+import { deleteReleasedPrisoner } from "@/lib/firebase-operations" // استيراد دالة الحذف
 import type { ReleasedPrisoner } from "@/lib/types"
 import Navbar from "@/components/layout/navbar"
 import ReleasedPrisonerCard from "@/components/released-prisoner-card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Download, Search, RefreshCw } from "lucide-react"
+import { Download, Search, RefreshCw, Trash2 } from "lucide-react" // استيراد Trash2
 import LoginForm from "@/components/login-form"
 import BackToHomeButton from "@/components/back-to-home-button"
 import Footer from "@/components/layout/footer"
-import { Dialog } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import EditReleasedPrisonerForm from "@/components/edit-released-prisoner-form"
+import { Alert, AlertDescription } from "@/components/ui/alert" // استيراد Alert
 
 export default function ReleasedPage() {
   const { user, isLoading } = useAuth()
@@ -25,6 +27,17 @@ export default function ReleasedPage() {
   const [error, setError] = useState<string | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedReleasedPrisoner, setSelectedReleasedPrisoner] = useState<ReleasedPrisoner | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    // New state for delete confirmation
+    show: boolean
+    prisonerId: string
+    prisonerName: string
+  }>({
+    show: false,
+    prisonerId: "",
+    prisonerName: "",
+  })
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null) // For success/error messages
 
   useEffect(() => {
     if (user?.isAuthenticated) {
@@ -37,15 +50,13 @@ export default function ReleasedPage() {
         releasedRef,
         (snapshot) => {
           const data = snapshot.val()
-          console.log("Firebase data snapshot for released-prisoners:", data) // للتشخيص
+          console.log("Firebase data snapshot for released-prisoners:", data)
 
           const combinedReleasedArray: ReleasedPrisoner[] = []
 
           if (data) {
-            // Case 1: Data directly under "released-prisoners" with Firebase-generated keys (newly added)
             if (typeof data === "object" && !Array.isArray(data)) {
               Object.keys(data).forEach((key) => {
-                // Exclude the 'releasedPrisoners' sub-node if it exists as a direct child
                 if (key !== "releasedPrisoners") {
                   combinedReleasedArray.push({
                     id: key,
@@ -55,25 +66,23 @@ export default function ReleasedPage() {
               })
             }
 
-            // Case 2: Data under a nested "releasedPrisoners" node with numerical keys (old seeded data)
             if (data.releasedPrisoners && typeof data.releasedPrisoners === "object") {
               Object.keys(data.releasedPrisoners).forEach((key) => {
                 combinedReleasedArray.push({
-                  id: key, // Use numerical key as ID for these entries
+                  id: key,
                   ...data.releasedPrisoners[key],
                 })
               })
             }
           }
 
-          // تصفية السجلات التي تحتوي على حقل "name" غير فارغ
           const validReleasedPrisoners = combinedReleasedArray.filter(
             (prisoner) => prisoner.name && prisoner.name.trim() !== "",
           )
 
           setReleasedPrisoners(validReleasedPrisoners)
           setFilteredReleased(validReleasedPrisoners)
-          console.log("Combined and filtered released prisoners loaded:", validReleasedPrisoners.length) // للتشخيص
+          console.log("Combined and filtered released prisoners loaded:", validReleasedPrisoners.length)
           setLoading(false)
         },
         (err) => {
@@ -107,6 +116,32 @@ export default function ReleasedPage() {
 
   const handleEditSuccess = () => {
     console.log("Released prisoner updated successfully! Firebase listener should auto-update.")
+    setMessage({ type: "success", text: "تم تحديث بيانات المفرج عنه بنجاح!" })
+    setTimeout(() => setMessage(null), 3000)
+  }
+
+  const confirmDeleteReleasedPrisoner = (prisonerId: string, prisonerName: string) => {
+    setDeleteConfirm({
+      show: true,
+      prisonerId,
+      prisonerName,
+    })
+  }
+
+  const handleDeleteReleasedPrisoner = async () => {
+    if (!deleteConfirm.prisonerId) return
+
+    setMessage(null) // Clear previous messages
+    try {
+      await deleteReleasedPrisoner(deleteConfirm.prisonerId)
+      setMessage({ type: "success", text: `تم حذف المفرج عنه ${deleteConfirm.prisonerName} بنجاح!` })
+      setDeleteConfirm({ show: false, prisonerId: "", prisonerName: "" })
+      setTimeout(() => setMessage(null), 3000)
+    } catch (error) {
+      console.error("Error deleting released prisoner:", error)
+      setMessage({ type: "error", text: "حدث خطأ أثناء حذف المفرج عنه." })
+      setTimeout(() => setMessage(null), 3000)
+    }
   }
 
   const exportToPDF = () => {
@@ -221,10 +256,6 @@ export default function ReleasedPage() {
               onClick={() => {
                 setLoading(true)
                 setError(null)
-                // Trigger re-fetch by re-initializing the listener (though onValue is continuous)
-                // A simple way to force re-evaluation of useEffect is to change a dependency,
-                // but since user.isAuthenticated is stable, we rely on onValue's real-time nature.
-                // This button primarily clears errors and shows loading state.
               }}
               variant="outline"
               className="w-full sm:w-auto bg-transparent"
@@ -240,6 +271,14 @@ export default function ReleasedPage() {
           </div>
         </div>
 
+        {message && (
+          <Alert variant={message.type === "success" ? "default" : "destructive"} className="mb-6">
+            <AlertDescription className="text-right" dir="rtl">
+              {message.text}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
             <p className="text-red-800 text-right" dir="rtl">
@@ -249,7 +288,6 @@ export default function ReleasedPage() {
               onClick={() => {
                 setLoading(true)
                 setError(null)
-                // Trigger re-fetch
               }}
               className="mt-2 bg-red-600 hover:bg-red-700"
             >
@@ -271,7 +309,6 @@ export default function ReleasedPage() {
               onClick={() => {
                 setLoading(true)
                 setError(null)
-                // Trigger re-fetch
               }}
               variant="outline"
             >
@@ -282,7 +319,12 @@ export default function ReleasedPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {filteredReleased.map((prisoner) => (
-              <ReleasedPrisonerCard key={prisoner.id} prisoner={prisoner} onEdit={handleEditReleasedPrisoner} />
+              <ReleasedPrisonerCard
+                key={prisoner.id}
+                prisoner={prisoner}
+                onEdit={handleEditReleasedPrisoner}
+                onDelete={confirmDeleteReleasedPrisoner} // Pass delete handler
+              />
             ))}
           </div>
         )}
@@ -298,6 +340,44 @@ export default function ReleasedPage() {
           />
         </Dialog>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteConfirm.show}
+        onOpenChange={(open) => !open && setDeleteConfirm({ show: false, prisonerId: "", prisonerName: "" })}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-right text-red-600" dir="rtl">
+              تأكيد الحذف
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-right" dir="rtl">
+              هل أنت متأكد من حذف المفرج عنه "{deleteConfirm.prisonerName}"؟
+            </p>
+            <p className="text-sm text-gray-600 text-right" dir="rtl">
+              لا يمكن التراجع عن هذا الإجراء.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setDeleteConfirm({ show: false, prisonerId: "", prisonerName: "" })}
+              >
+                إلغاء
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteReleasedPrisoner}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                <Trash2 className="ml-2 h-4 w-4" />
+                حذف
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>
