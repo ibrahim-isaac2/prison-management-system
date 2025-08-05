@@ -25,11 +25,36 @@ export const listenToReleasedPrisoners = (callback: (released: ReleasedPrisoner[
   return onValue(releasedRef, (snapshot) => {
     const data = snapshot.val()
     if (data) {
-      const releasedArray = Object.keys(data).map((key) => ({
-        id: key,
-        ...data[key],
-      }))
-      callback(releasedArray)
+      const combinedReleasedArray: ReleasedPrisoner[] = []
+
+      // Case 1: Data directly under "released-prisoners" with Firebase-generated keys (newly added)
+      if (typeof data === "object" && !Array.isArray(data)) {
+        Object.keys(data).forEach((key) => {
+          if (key !== "releasedPrisoners") {
+            combinedReleasedArray.push({
+              id: key,
+              ...data[key],
+            })
+          }
+        })
+      }
+
+      // Case 2: Data under a nested "releasedPrisoners" node with numerical keys (old seeded data)
+      if (data.releasedPrisoners && typeof data.releasedPrisoners === "object") {
+        Object.keys(data.releasedPrisoners).forEach((key) => {
+          combinedReleasedArray.push({
+            id: key,
+            ...data.releasedPrisoners[key],
+          })
+        })
+      }
+
+      // Filter out records with empty names
+      const validReleasedPrisoners = combinedReleasedArray.filter(
+        (prisoner) => prisoner.name && prisoner.name.trim() !== "",
+      )
+
+      callback(validReleasedPrisoners)
     } else {
       callback([])
     }
@@ -97,6 +122,18 @@ export const deleteUser = async (userId: string, userRole: "admin" | "viewer") =
 
   const userDbRef = ref(database, `users/${userRole}s/${userId}`)
   return await remove(userDbRef)
+}
+
+// New: Delete Prisoner
+export const deletePrisoner = async (prisonerId: string) => {
+  const prisonerRef = ref(database, `prisoners/${prisonerId}`)
+  return await remove(prisonerRef)
+}
+
+// New: Delete Released Prisoner
+export const deleteReleasedPrisoner = async (releasedId: string) => {
+  const releasedRef = ref(database, `released-prisoners/${releasedId}`)
+  return await remove(releasedRef)
 }
 
 // Update operations
