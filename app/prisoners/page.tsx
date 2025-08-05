@@ -4,17 +4,19 @@ import { useAuth } from "@/lib/auth-context"
 import { useEffect, useState } from "react"
 import { database } from "@/lib/firebase"
 import { ref, onValue } from "firebase/database"
+import { deletePrisoner } from "@/lib/firebase-operations" // استيراد دالة الحذف
 import type { Prisoner } from "@/lib/types"
 import Navbar from "@/components/layout/navbar"
 import PrisonerCard from "@/components/prisoner-card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Download, Search } from "lucide-react"
+import { Download, Search, Trash2 } from "lucide-react" // استيراد Trash2
 import LoginForm from "@/components/login-form"
 import BackToHomeButton from "@/components/back-to-home-button"
 import Footer from "@/components/layout/footer"
-import { Dialog } from "@/components/ui/dialog" // Import Dialog components
-import EditPrisonerForm from "@/components/edit-prisoner-form" // Import new edit form
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import EditPrisonerForm from "@/components/edit-prisoner-form"
+import { Alert, AlertDescription } from "@/components/ui/alert" // استيراد Alert
 
 export default function PrisonersPage() {
   const { user, isLoading } = useAuth()
@@ -22,8 +24,19 @@ export default function PrisonersPage() {
   const [filteredPrisoners, setFilteredPrisoners] = useState<Prisoner[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false) // State for edit dialog
-  const [selectedPrisoner, setSelectedPrisoner] = useState<Prisoner | null>(null) // State for selected prisoner to edit
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [selectedPrisoner, setSelectedPrisoner] = useState<Prisoner | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    // New state for delete confirmation
+    show: boolean
+    prisonerId: string
+    prisonerName: string
+  }>({
+    show: false,
+    prisonerId: "",
+    prisonerName: "",
+  })
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null) // For success/error messages
 
   useEffect(() => {
     if (user?.isAuthenticated) {
@@ -65,8 +78,33 @@ export default function PrisonersPage() {
   }
 
   const handleEditSuccess = () => {
-    // Optionally re-fetch or update state if needed, though onValue listener should handle it
     console.log("Prisoner updated successfully!")
+    setMessage({ type: "success", text: "تم تحديث بيانات السجين بنجاح!" })
+    setTimeout(() => setMessage(null), 3000)
+  }
+
+  const confirmDeletePrisoner = (prisonerId: string, prisonerName: string) => {
+    setDeleteConfirm({
+      show: true,
+      prisonerId,
+      prisonerName,
+    })
+  }
+
+  const handleDeletePrisoner = async () => {
+    if (!deleteConfirm.prisonerId) return
+
+    setMessage(null) // Clear previous messages
+    try {
+      await deletePrisoner(deleteConfirm.prisonerId)
+      setMessage({ type: "success", text: `تم حذف السجين ${deleteConfirm.prisonerName} بنجاح!` })
+      setDeleteConfirm({ show: false, prisonerId: "", prisonerName: "" })
+      setTimeout(() => setMessage(null), 3000)
+    } catch (error) {
+      console.error("Error deleting prisoner:", error)
+      setMessage({ type: "error", text: "حدث خطأ أثناء حذف السجين." })
+      setTimeout(() => setMessage(null), 3000)
+    }
   }
 
   const exportToPDF = () => {
@@ -184,6 +222,14 @@ export default function PrisonersPage() {
           </div>
         </div>
 
+        {message && (
+          <Alert variant={message.type === "success" ? "default" : "destructive"} className="mb-6">
+            <AlertDescription className="text-right" dir="rtl">
+              {message.text}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {loading ? (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
@@ -196,7 +242,12 @@ export default function PrisonersPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {filteredPrisoners.map((prisoner) => (
-              <PrisonerCard key={prisoner.id} prisoner={prisoner} onEdit={handleEditPrisoner} />
+              <PrisonerCard
+                key={prisoner.id}
+                prisoner={prisoner}
+                onEdit={handleEditPrisoner}
+                onDelete={confirmDeletePrisoner} // Pass delete handler
+              />
             ))}
           </div>
         )}
@@ -212,6 +263,40 @@ export default function PrisonersPage() {
           />
         </Dialog>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteConfirm.show}
+        onOpenChange={(open) => !open && setDeleteConfirm({ show: false, prisonerId: "", prisonerName: "" })}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-right text-red-600" dir="rtl">
+              تأكيد الحذف
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-right" dir="rtl">
+              هل أنت متأكد من حذف السجين "{deleteConfirm.prisonerName}"؟
+            </p>
+            <p className="text-sm text-gray-600 text-right" dir="rtl">
+              لا يمكن التراجع عن هذا الإجراء.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setDeleteConfirm({ show: false, prisonerId: "", prisonerName: "" })}
+              >
+                إلغاء
+              </Button>
+              <Button variant="destructive" onClick={handleDeletePrisoner} className="bg-red-600 hover:bg-red-700">
+                <Trash2 className="ml-2 h-4 w-4" />
+                حذف
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>
