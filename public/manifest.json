@@ -1,0 +1,22 @@
+{
+  "name": "نظام بيانات السجناء - خدمة السجناء والمسجونين",
+  "short_name": "نظام السجناء",
+  "description": "نظام إدارة بيانات السجناء والمفرج عنهم",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1e40af",
+  "theme_color": "#1e40af",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
