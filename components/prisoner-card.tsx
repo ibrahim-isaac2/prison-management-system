@@ -3,17 +3,18 @@
 import type { Prisoner } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, MapPin, Phone, User, FileText, Edit } from "lucide-react"
+import { Calendar, MapPin, Phone, User, FileText, Edit, Trash2 } from "lucide-react" // استيراد Trash2
 import { Button } from "@/components/ui/button"
-import { useAuth } from "@/lib/auth-context" // Import useAuth
+import { useAuth } from "@/lib/auth-context"
 
 interface PrisonerCardProps {
   prisoner: Prisoner
-  onEdit: (prisoner: Prisoner) => void // New prop for edit action
+  onEdit: (prisoner: Prisoner) => void
+  onDelete: (prisonerId: string, prisonerName: string) => void // New prop for delete action
 }
 
-export default function PrisonerCard({ prisoner, onEdit }: PrisonerCardProps) {
-  const { user } = useAuth() // Use auth context to check role
+export default function PrisonerCard({ prisoner, onEdit, onDelete }: PrisonerCardProps) {
+  const { user } = useAuth()
 
   return (
     <Card className="h-full hover:shadow-lg transition-shadow flex flex-col">
@@ -21,15 +22,28 @@ export default function PrisonerCard({ prisoner, onEdit }: PrisonerCardProps) {
         <CardTitle className="text-lg text-blue-800 text-right flex justify-between items-center" dir="rtl">
           {prisoner.name || "غير محدد"}
           {user?.role === "admin" && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onEdit(prisoner)}
-              className="text-blue-600 border-blue-600 hover:bg-blue-600 hover:text-white"
-            >
-              <Edit className="h-4 w-4" />
-              <span className="sr-only">تعديل</span>
-            </Button>
+            <div className="flex gap-2">
+              {" "}
+              {/* Group buttons */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onEdit(prisoner)}
+                className="text-blue-600 border-blue-600 hover:bg-blue-600 hover:text-white"
+              >
+                <Edit className="h-4 w-4" />
+                <span className="sr-only">تعديل</span>
+              </Button>
+              <Button
+                variant="destructive" // Style for delete button
+                size="sm"
+                onClick={() => onDelete(prisoner.id, prisoner.name)} // Call onDelete
+                className="bg-red-600 hover:bg-red-700"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">حذف</span>
+              </Button>
+            </div>
           )}
         </CardTitle>
         <Badge variant="secondary" className="w-fit text-right">
