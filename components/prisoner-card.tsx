@@ -1,26 +1,38 @@
 "use client"
 
 import type { Prisoner } from "@/lib/types"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, MapPin, Phone, User, FileText, Edit, Trash2 } from "lucide-react" // استيراد Trash2
+import { Edit, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/auth-context"
+
+// Dialog لعرض التفاصيل
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 
 interface PrisonerCardProps {
   prisoner: Prisoner
   onEdit: (prisoner: Prisoner) => void
-  onDelete: (prisonerId: string, prisonerName: string) => void // New prop for delete action
+  onDelete: (prisonerId: string, prisonerName: string) => void
 }
 
 export default function PrisonerCard({ prisoner, onEdit, onDelete }: PrisonerCardProps) {
   const { user } = useAuth()
 
   return (
-    <Card className="mb-4">
+    <Card className="mb-4 p-3 shadow-md">
       <CardHeader>
         <div className="flex items-center justify-between">
+          {/* الاسم */}
           <CardTitle className="text-right">{prisoner.name}</CardTitle>
+
+          {/* السجن + أزرار */}
           <div className="flex items-center gap-2">
             <Badge>{prisoner.prison}</Badge>
             {user?.isAuthenticated && (
@@ -36,43 +48,36 @@ export default function PrisonerCard({ prisoner, onEdit, onDelete }: PrisonerCar
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="flex items-center space-x-2 space-x-reverse">
-          <User className="h-4 w-4 text-gray-600" />
-          <span className="text-sm">العائلة: {prisoner.family || "غير محدد"}</span>
-        </div>
 
-        <div className="flex items-center space-x-2 space-x-reverse">
-          <MapPin className="h-4 w-4 text-gray-600" />
-          <span className="text-sm">الإقامة: {prisoner.residence || "غير محدد"}</span>
-        </div>
-
-        <div className="flex items-center space-x-2 space-x-reverse">
-          <User className="h-4 w-4 text-gray-600" />
-          <span className="text-sm">عدد الأبناء: {prisoner.childrenCount || "غير محدد"}</span>
-        </div>
-
-        <div className="flex items-center space-x-2 space-x-reverse">
-          <Calendar className="h-4 w-4 text-gray-600" />
-          <span className="text-sm">الحالة الدراسية: {prisoner.educationStatus || "غير محدد"}</span>
-        </div>
-
-        <div className="flex items-center space-x-2 space-x-reverse">
-          <Calendar className="h-4 w-4 text-blue-600" />
-          <span className="text-sm">مدة العقوبة: {prisoner.years || "غير محدد"}</span>
-        </div>
-
-        <div className="flex items-center space-x-2 space-x-reverse">
-          <FileText className="h-4 w-4 text-blue-600" />
-          <span className="text-sm">الرقم القومي: {prisoner.nationalId || "غير محدد"}</span>
-        </div>
-
-        {prisoner.submissions && (
-          <div className="mt-3 p-2 bg-yellow-50 rounded-md">
-            <p className="text-sm text-yellow-800">{prisoner.submissions}</p>
-          </div>
-        )}
-      </CardContent>
+      {/* زر التفاصيل */}
+      <div className="flex justify-end px-3 pb-3">
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm">عرض التفاصيل</Button>
+          </DialogTrigger>
+          <DialogContent dir="rtl" className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>بيانات السجين</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2 text-right text-sm">
+              <p>العائلة: {prisoner.family || "غير محدد"}</p>
+              <p>الإقامة: {prisoner.residence || "غير محدد"}</p>
+              <p>عدد الأبناء: {prisoner.childrenCount || "غير محدد"}</p>
+              <p>الحالة الدراسية: {prisoner.educationStatus || "غير محدد"}</p>
+              <p>مدة العقوبة: {prisoner.years || "غير محدد"}</p>
+              <p>من: {prisoner.from} - إلى: {prisoner.to}</p>
+              <p>الرقم القومي: {prisoner.nationalId || "غير محدد"}</p>
+              <p>الهاتف: {prisoner.phone || "غير محدد"}</p>
+              <p>التوقيع: {prisoner.signature || "غير محدد"}</p>
+              {prisoner.submissions && (
+                <div className="mt-3 p-2 bg-yellow-50 rounded-md">
+                  <p className="text-sm text-yellow-800">{prisoner.submissions}</p>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     </Card>
   )
 }
