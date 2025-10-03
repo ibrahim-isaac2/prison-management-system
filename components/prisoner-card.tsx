@@ -3,7 +3,7 @@
 import type { Prisoner } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, MapPin, User, FileText, Edit, Trash2, Users, GraduationCap, Eye } from "lucide-react"
+import { Calendar, MapPin, User, FileText, Edit, Trash2, Users, GraduationCap, Eye, Scale } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/auth-context"
 import {
@@ -105,6 +105,16 @@ export default function PrisonerCard({ prisoner, onEdit, onDelete }: PrisonerCar
             <div className="flex flex-col">
               <span className="text-xs text-muted-foreground font-medium">الحالة الدراسية</span>
               <span className="text-sm font-semibold text-foreground">{prisoner.educationStatus || "غير محدد"}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-red-50 to-transparent hover:from-red-100 transition-colors border border-red-200">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-md">
+              <Scale className="h-5 w-5 text-white" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs text-red-600 font-medium">التهمة</span>
+              <span className="text-sm font-bold text-red-700">{prisoner.charge || "غير محدد"}</span>
             </div>
           </div>
 
@@ -218,6 +228,16 @@ export default function PrisonerCard({ prisoner, onEdit, onDelete }: PrisonerCar
                   <p className="text-lg font-bold text-purple-700 mr-13">{prisoner.educationStatus || "غير محدد"}</p>
                 </div>
 
+                <div className="p-4 rounded-lg bg-gradient-to-r from-red-50 to-red-100/50 border border-red-200">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
+                      <Scale className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="text-sm font-semibold text-red-900">التهمة</span>
+                  </div>
+                  <p className="text-lg font-bold text-red-700 mr-13">{prisoner.charge || "غير محدد"}</p>
+                </div>
+
                 <div className="p-4 rounded-lg bg-gradient-to-r from-cyan-50 to-cyan-100/50 border border-cyan-200">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center">
@@ -259,4 +279,3 @@ export default function PrisonerCard({ prisoner, onEdit, onDelete }: PrisonerCar
     </Card>
   )
 }
-
