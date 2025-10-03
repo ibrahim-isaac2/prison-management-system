@@ -17,73 +17,50 @@ export default function PrisonerCard({ prisoner, onEdit, onDelete }: PrisonerCar
   const { user } = useAuth()
 
   return (
-    <Card className="h-full hover:shadow-lg transition-shadow flex flex-col">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg text-blue-800 text-right flex justify-between items-center" dir="rtl">
-          {prisoner.name || "غير محدد"}
-          {user?.role === "admin" && (
-            <div className="flex gap-2">
-              {" "}
-              {/* Group buttons */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onEdit(prisoner)}
-                className="text-blue-600 border-blue-600 hover:bg-blue-600 hover:text-white"
-              >
-                <Edit className="h-4 w-4" />
-                <span className="sr-only">تعديل</span>
-              </Button>
-              <Button
-                variant="destructive" // Style for delete button
-                size="sm"
-                onClick={() => onDelete(prisoner.id, prisoner.name)} // Call onDelete
-                className="bg-red-600 hover:bg-red-700"
-              >
-                <Trash2 className="h-4 w-4" />
-                <span className="sr-only">حذف</span>
-              </Button>
-            </div>
-          )}
-        </CardTitle>
-        <Badge variant="secondary" className="w-fit text-right">
-          {prisoner.charge || "غير محدد"}
-        </Badge>
-      </CardHeader>
-      <CardContent className="space-y-3 text-right flex-1" dir="rtl">
-        <div className="flex items-center space-x-2 space-x-reverse">
-          <MapPin className="h-4 w-4 text-blue-600" />
-          <span className="text-sm">{prisoner.prison || "غير محدد"}</span>
-        </div>
-
-        <div className="flex items-center space-x-2 space-x-reverse">
-          <User className="h-4 w-4 text-blue-600" />
-          <span className="text-sm">{prisoner.family || "غير محدد"}</span>
-        </div>
-
-        <div className="flex items-center space-x-2 space-x-reverse">
-          <MapPin className="h-4 w-4 text-blue-600" />
-          <span className="text-sm">{prisoner.residence || "غير محدد"}</span>
-        </div>
-
-        <div className="flex items-center space-x-2 space-x-reverse">
-          <Calendar className="h-4 w-4 text-blue-600" />
-          <span className="text-sm">{prisoner.years || "غير محدد"} سنة</span>
-        </div>
-
-        <div className="flex items-center space-x-2 space-x-reverse">
-          <Calendar className="h-4 w-4 text-blue-600" />
-          <span className="text-sm">
-            من {prisoner.from || "غير محدد"} إلى {prisoner.to || "غير محدد"}
-          </span>
-        </div>
-
-        {prisoner.phone && (
-          <div className="flex items-center space-x-2 space-x-reverse">
-            <Phone className="h-4 w-4 text-blue-600" />
-            <span className="text-sm">{prisoner.phone}</span>
+    <Card className="mb-4">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-right">{prisoner.name}</CardTitle>
+          <div className="flex items-center gap-2">
+            <Badge>{prisoner.prison}</Badge>
+            {user?.isAuthenticated && (
+              <>
+                <Button size="sm" variant="ghost" onClick={() => onEdit(prisoner)}>
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => onDelete(prisoner.id, prisoner.name)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </>
+            )}
           </div>
-        )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center space-x-2 space-x-reverse">
+          <User className="h-4 w-4 text-gray-600" />
+          <span className="text-sm">العائلة: {prisoner.family || "غير محدد"}</span>
+        </div>
+
+        <div className="flex items-center space-x-2 space-x-reverse">
+          <MapPin className="h-4 w-4 text-gray-600" />
+          <span className="text-sm">الإقامة: {prisoner.residence || "غير محدد"}</span>
+        </div>
+
+        <div className="flex items-center space-x-2 space-x-reverse">
+          <User className="h-4 w-4 text-gray-600" />
+          <span className="text-sm">عدد الأبناء: {prisoner.childrenCount || "غير محدد"}</span>
+        </div>
+
+        <div className="flex items-center space-x-2 space-x-reverse">
+          <Calendar className="h-4 w-4 text-gray-600" />
+          <span className="text-sm">الحالة الدراسية: {prisoner.educationStatus || "غير محدد"}</span>
+        </div>
+
+        <div className="flex items-center space-x-2 space-x-reverse">
+          <Calendar className="h-4 w-4 text-blue-600" />
+          <span className="text-sm">مدة العقوبة: {prisoner.years || "غير محدد"}</span>
+        </div>
 
         <div className="flex items-center space-x-2 space-x-reverse">
           <FileText className="h-4 w-4 text-blue-600" />
