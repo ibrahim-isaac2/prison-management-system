@@ -15,7 +15,7 @@ import { Save, Edit } from "lucide-react"
 interface EditPrisonerFormProps {
   prisoner: Prisoner
   onClose: () => void
-  onSuccess: () => void
+  onSuccess: (updated: Prisoner) => void
 }
 
 export default function EditPrisonerForm({ prisoner, onClose, onSuccess }: EditPrisonerFormProps) {
@@ -41,13 +41,11 @@ export default function EditPrisonerForm({ prisoner, onClose, onSuccess }: EditP
     setMessage(null)
 
     try {
-      await updatePrisoner(prisoner.id, formData)
-      setMessage({ type: "success", text: "تم تحديث بيانات السجين بنجاح" })
-      onSuccess()
-      setTimeout(onClose, 1500) // Close dialog after success
+      const updated = await updatePrisoner(prisoner.id, formData)
+      setMessage({ type: "success", text: "تم حفظ التعديلات" })
+      onSuccess({ id: prisoner.id, ...(formData as any) } as Prisoner)
     } catch (error) {
-      console.error("Error updating prisoner:", error)
-      setMessage({ type: "error", text: "حدث خطأ أثناء تحديث بيانات السجين" })
+      setMessage({ type: "error", text: "حدث خطأ أثناء حفظ التعديلات" })
     } finally {
       setLoading(false)
     }
@@ -56,7 +54,7 @@ export default function EditPrisonerForm({ prisoner, onClose, onSuccess }: EditP
   return (
     <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
       <DialogHeader>
-        <DialogTitle className="text-right flex items-center justify-end text-blue-800">
+        <DialogTitle className="text-right flex items-center justify-end text-green-800">
           <Edit className="ml-2 h-5 w-5" />
           تعديل بيانات السجين: {prisoner.name}
         </DialogTitle>
@@ -64,9 +62,7 @@ export default function EditPrisonerForm({ prisoner, onClose, onSuccess }: EditP
       <div className="p-4 md:p-6">
         {message && (
           <Alert variant={message.type === "success" ? "default" : "destructive"} className="mb-6">
-            <AlertDescription className="text-right" dir="rtl">
-              {message.text}
-            </AlertDescription>
+            <AlertDescription>{message.text}</AlertDescription>
           </Alert>
         )}
 
@@ -76,171 +72,106 @@ export default function EditPrisonerForm({ prisoner, onClose, onSuccess }: EditP
               <Label htmlFor="name" className="text-right block">
                 الاسم *
               </Label>
-              <Input
-                id="name"
-                name="name"
-                value={formData.name || ""}
-                onChange={handleInputChange}
-                required
-                className="text-right"
-                dir="rtl"
-              />
+              <Input id="name" name="name" value={formData.name || ""} onChange={handleInputChange} required className="text-right" dir="rtl" />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="charge" className="text-right block">
                 التهمة *
               </Label>
-              <Input
-                id="charge"
-                name="charge"
-                value={formData.charge || ""}
-                onChange={handleInputChange}
-                required
-                className="text-right"
-                dir="rtl"
-              />
+              <Input id="charge" name="charge" value={formData.charge || ""} onChange={handleInputChange} required className="text-right" dir="rtl" />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="prison" className="text-right block">
                 السجن *
               </Label>
-              <Input
-                id="prison"
-                name="prison"
-                value={formData.prison || ""}
-                onChange={handleInputChange}
-                required
-                className="text-right"
-                dir="rtl"
-              />
+              <Input id="prison" name="prison" value={formData.prison || ""} onChange={handleInputChange} required className="text-right" dir="rtl" />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="family" className="text-right block">
                 الأهل *
               </Label>
-              <Input
-                id="family"
-                name="family"
-                value={formData.family || ""}
-                onChange={handleInputChange}
-                required
-                className="text-right"
-                dir="rtl"
-              />
+              <Input id="family" name="family" value={formData.family || ""} onChange={handleInputChange} required className="text-right" dir="rtl" />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="residence" className="text-right block">
                 الإقامة *
               </Label>
-              <Input
-                id="residence"
-                name="residence"
-                value={formData.residence || ""}
-                onChange={handleInputChange}
-                required
-                className="text-right"
-                dir="rtl"
-              />
+              <Input id="residence" name="residence" value={formData.residence || ""} onChange={handleInputChange} required className="text-right" dir="rtl" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="childrenCount" className="text-right block">
+                عدد الأبناء
+              </Label>
+              <Input id="childrenCount" name="childrenCount" type="number" value={formData.childrenCount || ""} onChange={handleInputChange} className="text-right" dir="rtl" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="educationStatus" className="text-right block">
+                الحالة الدراسية
+              </Label>
+              <Input id="educationStatus" name="educationStatus" value={formData.educationStatus || ""} onChange={handleInputChange} className="text-right" dir="rtl" />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="years" className="text-right block">
                 عدد السنوات *
               </Label>
-              <Input
-                id="years"
-                name="years"
-                value={formData.years || ""}
-                onChange={handleInputChange}
-                required
-                className="text-right"
-                dir="rtl"
-              />
+              <Input id="years" name="years" value={formData.years || ""} onChange={handleInputChange} required className="text-right" dir="rtl" />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="from" className="text-right block">
                 من تاريخ *
               </Label>
-              <Input
-                id="from"
-                name="from"
-                value={formData.from || ""}
-                onChange={handleInputChange}
-                required
-                className="text-right"
-                dir="rtl"
-              />
+              <Input id="from" name="from" value={formData.from || ""} onChange={handleInputChange} required className="text-right" dir="rtl" />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="to" className="text-right block">
                 إلى تاريخ *
               </Label>
-              <Input
-                id="to"
-                name="to"
-                value={formData.to || ""}
-                onChange={handleInputChange}
-                required
-                className="text-right"
-                dir="rtl"
-              />
+              <Input id="to" name="to" value={formData.to || ""} onChange={handleInputChange} required className="text-right" dir="rtl" />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="phone" className="text-right block">
-                رقم الهاتف
+                هاتف
               </Label>
-              <Input
-                id="phone"
-                name="phone"
-                value={formData.phone || ""}
-                onChange={handleInputChange}
-                className="text-right"
-                dir="rtl"
-              />
+              <Input id="phone" name="phone" value={formData.phone || ""} onChange={handleInputChange} className="text-right" dir="rtl" />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="nationalId" className="text-right block">
-                الرقم القومي *
+                الرقم القومي
               </Label>
-              <Input
-                id="nationalId"
-                name="nationalId"
-                value={formData.nationalId || ""}
-                onChange={handleInputChange}
-                required
-                className="text-right"
-                dir="rtl"
-              />
+              <Input id="nationalId" name="nationalId" value={formData.nationalId || ""} onChange={handleInputChange} className="text-right" dir="rtl" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="signature" className="text-right block">
+                توقيع
+              </Label>
+              <Input id="signature" name="signature" value={formData.signature || ""} onChange={handleInputChange} className="text-right" dir="rtl" />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="submissions" className="text-right block">
-              ملاحظات
+              ملاحظات / مرافعات
             </Label>
-            <Textarea
-              id="submissions"
-              name="submissions"
-              value={formData.submissions || ""}
-              onChange={handleInputChange}
-              className="text-right min-h-[100px]"
-              dir="rtl"
-            />
+            <Textarea id="submissions" name="submissions" value={formData.submissions || ""} onChange={handleInputChange} className="text-right min-h-[100px]" dir="rtl" />
           </div>
 
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>
               إلغاء
             </Button>
-            <Button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700">
+            <Button type="submit" disabled={loading} className="bg-green-600 hover:bg-green-700">
               <Save className="ml-2 h-4 w-4" />
               {loading ? "جاري الحفظ..." : "حفظ التعديلات"}
             </Button>
