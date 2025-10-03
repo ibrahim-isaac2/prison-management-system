@@ -12,6 +12,9 @@ export interface Prisoner {
   phone: string
   nationalId: string
   signature: string
+  // NEW FIELDS
+  childrenCount?: string
+  educationStatus?: string
 }
 
 export interface ReleasedPrisoner {
@@ -26,6 +29,9 @@ export interface ReleasedPrisoner {
   phone: string
   nationalId: string
   signature: string
+  // NEW FIELDS
+  childrenCount?: string
+  educationStatus?: string
 }
 
 export interface User {
