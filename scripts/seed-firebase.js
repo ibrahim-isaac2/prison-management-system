@@ -16,41 +16,9 @@ const app = initializeApp(firebaseConfig)
 const database = getDatabase(app)
 
 const prisonersData = {
-  1: {
-    name: "وديع حبيب سلامة",
-    charge: "سرقة",
-    prison: "15 مايو",
-    family: "نوارة فايز حنا",
-    residence: "مغاغة",
-    years: "7",
-    from: "9/2023",
-    to: "9/2030",
-    submissions: "",
-    phone: "01286802529",
-    nationalId: "27311192402244",
-    signature: "",
-    childrenCount: "",
-    educationStatus: "",
-  },
-  // ... بقية العناصر بنفس البنية
 }
 
 const releasedPrisonersData = {
-  1: {
-    name: "ايهاب شحاتة عزيز",
-    charge: "مخدرات",
-    prison: "وادي النطرون",
-    family: "نرمين مجدي عطية",
-    residence: "سمالوط",
-    releaseDate: "6/2024",
-    submissions: "",
-    phone: "01066826781",
-    nationalId: "29810152403101",
-    signature: "",
-    childrenCount: "",
-    educationStatus: "",
-  },
-  // ... بقية العناصر بنفس البنية
 }
 
 async function seedDatabase() {
