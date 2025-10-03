@@ -15,11 +15,23 @@ import { Save, Edit } from "lucide-react"
 interface EditReleasedPrisonerFormProps {
   prisoner: ReleasedPrisoner
   onClose: () => void
-  onSuccess: () => void
+  onSaved: (updated: ReleasedPrisoner) => void
 }
 
-export default function EditReleasedPrisonerForm({ prisoner, onClose, onSuccess }: EditReleasedPrisonerFormProps) {
-  const [formData, setFormData] = useState<Omit<ReleasedPrisoner, "id">>(prisoner)
+export default function EditReleasedPrisonerForm({ prisoner, onClose, onSaved }: EditReleasedPrisonerFormProps) {
+  const [formData, setFormData] = useState<Partial<ReleasedPrisoner>>({
+    name: "",
+    prison: "",
+    family: "",
+    residence: "",
+    childrenCount: "",
+    educationStatus: "",
+    releaseDate: "",
+    submissions: "",
+    phone: "",
+    nationalId: "",
+    signature: "",
+  })
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
@@ -41,13 +53,11 @@ export default function EditReleasedPrisonerForm({ prisoner, onClose, onSuccess 
     setMessage(null)
 
     try {
-      await updateReleasedPrisoner(prisoner.id, formData)
-      setMessage({ type: "success", text: "تم تحديث بيانات المفرج عنه بنجاح" })
-      onSuccess()
-      setTimeout(onClose, 1500) // Close dialog after success
+      await updateReleasedPrisoner(prisoner.id, formData as ReleasedPrisoner)
+      setMessage({ type: "success", text: "تم حفظ التعديلات" })
+      onSaved({ id: prisoner.id, ...(formData as any) } as ReleasedPrisoner)
     } catch (error) {
-      console.error("Error updating released prisoner:", error)
-      setMessage({ type: "error", text: "حدث خطأ أثناء تحديث بيانات المفرج عنه" })
+      setMessage({ type: "error", text: "حدث خطأ أثناء حفظ التعديلات" })
     } finally {
       setLoading(false)
     }
@@ -64,9 +74,7 @@ export default function EditReleasedPrisonerForm({ prisoner, onClose, onSuccess 
       <div className="p-4 md:p-6">
         {message && (
           <Alert variant={message.type === "success" ? "default" : "destructive"} className="mb-6">
-            <AlertDescription className="text-right" dir="rtl">
-              {message.text}
-            </AlertDescription>
+            <AlertDescription>{message.text}</AlertDescription>
           </Alert>
         )}
 
@@ -76,134 +84,78 @@ export default function EditReleasedPrisonerForm({ prisoner, onClose, onSuccess 
               <Label htmlFor="name" className="text-right block">
                 الاسم *
               </Label>
-              <Input
-                id="name"
-                name="name"
-                value={formData.name || ""}
-                onChange={handleInputChange}
-                required
-                className="text-right"
-                dir="rtl"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="charge" className="text-right block">
-                التهمة *
-              </Label>
-              <Input
-                id="charge"
-                name="charge"
-                value={formData.charge || ""}
-                onChange={handleInputChange}
-                required
-                className="text-right"
-                dir="rtl"
-              />
+              <Input id="name" name="name" value={formData.name || ""} onChange={handleInputChange} required className="text-right" dir="rtl" />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="prison" className="text-right block">
-                السجن *
+                السجن
               </Label>
-              <Input
-                id="prison"
-                name="prison"
-                value={formData.prison || ""}
-                onChange={handleInputChange}
-                required
-                className="text-right"
-                dir="rtl"
-              />
+              <Input id="prison" name="prison" value={formData.prison || ""} onChange={handleInputChange} className="text-right" dir="rtl" />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="family" className="text-right block">
-                الأهل *
+                الأهل
               </Label>
-              <Input
-                id="family"
-                name="family"
-                value={formData.family || ""}
-                onChange={handleInputChange}
-                required
-                className="text-right"
-                dir="rtl"
-              />
+              <Input id="family" name="family" value={formData.family || ""} onChange={handleInputChange} className="text-right" dir="rtl" />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="residence" className="text-right block">
-                الإقامة *
+                الإقامة
               </Label>
-              <Input
-                id="residence"
-                name="residence"
-                value={formData.residence || ""}
-                onChange={handleInputChange}
-                required
-                className="text-right"
-                dir="rtl"
-              />
+              <Input id="residence" name="residence" value={formData.residence || ""} onChange={handleInputChange} className="text-right" dir="rtl" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="childrenCount" className="text-right block">
+                عدد الأبناء
+              </Label>
+              <Input id="childrenCount" name="childrenCount" type="number" value={formData.childrenCount || ""} onChange={handleInputChange} className="text-right" dir="rtl" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="educationStatus" className="text-right block">
+                الحالة الدراسية
+              </Label>
+              <Input id="educationStatus" name="educationStatus" value={formData.educationStatus || ""} onChange={handleInputChange} className="text-right" dir="rtl" />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="releaseDate" className="text-right block">
-                تاريخ الإفراج *
+                تاريخ الإفراج
               </Label>
-              <Input
-                id="releaseDate"
-                name="releaseDate"
-                value={formData.releaseDate || ""}
-                onChange={handleInputChange}
-                required
-                className="text-right"
-                dir="rtl"
-              />
+              <Input id="releaseDate" name="releaseDate" value={formData.releaseDate || ""} onChange={handleInputChange} className="text-right" dir="rtl" />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="phone" className="text-right block">
-                رقم الهاتف
+                هاتف
               </Label>
-              <Input
-                id="phone"
-                name="phone"
-                value={formData.phone || ""}
-                onChange={handleInputChange}
-                className="text-right"
-                dir="rtl"
-              />
+              <Input id="phone" name="phone" value={formData.phone || ""} onChange={handleInputChange} className="text-right" dir="rtl" />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="nationalId" className="text-right block">
-                الرقم القومي *
+                الرقم القومي
               </Label>
-              <Input
-                id="nationalId"
-                name="nationalId"
-                value={formData.nationalId || ""}
-                onChange={handleInputChange}
-                required
-                className="text-right"
-                dir="rtl"
-              />
+              <Input id="nationalId" name="nationalId" value={formData.nationalId || ""} onChange={handleInputChange} className="text-right" dir="rtl" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="signature" className="text-right block">
+                توقيع
+              </Label>
+              <Input id="signature" name="signature" value={formData.signature || ""} onChange={handleInputChange} className="text-right" dir="rtl" />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="submissions" className="text-right block">
-              ملاحظات
+              ملاحظات / مرافعات
             </Label>
-            <Textarea
-              id="submissions"
-              name="submissions"
-              value={formData.submissions || ""}
-              onChange={handleInputChange}
-              className="text-right min-h-[100px]"
-              dir="rtl"
-            />
+            <Textarea id="submissions" name="submissions" value={formData.submissions || ""} onChange={handleInputChange} className="text-right min-h-[100px]" dir="rtl" />
           </div>
 
           <div className="flex justify-end gap-2">
