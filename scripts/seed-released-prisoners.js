@@ -15,7 +15,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig)
 const database = getDatabase(app)
 
-// Sample released prisoners data
 const releasedPrisonersData = {
   1: {
     name: "ايهاب شحاتة عزيز",
@@ -28,6 +27,8 @@ const releasedPrisonersData = {
     phone: "01066826781",
     nationalId: "29810152403101",
     signature: "",
+    childrenCount: "",
+    educationStatus: "",
   },
   2: {
     name: "ثابت عيد زاهي",
@@ -37,46 +38,13 @@ const releasedPrisonersData = {
     residence: "مطاي",
     releaseDate: "10/2024",
     submissions: "",
-    phone: "01119517937",
-    nationalId: "2791126240805",
+    phone: "011195179",
+    nationalId: "",
     signature: "",
+    childrenCount: "",
+    educationStatus: "",
   },
-  3: {
-    name: "عاطف سيدهم ابراهيم",
-    charge: "سرقة",
-    prison: "المنيا",
-    family: "مريم سعد ابراهيم",
-    residence: "كوم اللوفي",
-    releaseDate: "10/2024",
-    submissions: "",
-    phone: "01148946346",
-    nationalId: "28407012405047",
-    signature: "",
-  },
-  4: {
-    name: "سوس ميخائيل سوس",
-    charge: "سرقة",
-    prison: "المنيا",
-    family: "عفاف بشرى سمعان",
-    residence: "طحا الاعمدة",
-    releaseDate: "10/2024",
-    submissions: "",
-    phone: "01277509537",
-    nationalId: "29607112400967",
-    signature: "",
-  },
-  5: {
-    name: "عماد عبد الملاك روماني",
-    charge: "قتل",
-    prison: "المنيا",
-    family: "حنان شوقي شفيق",
-    residence: "الجبالي",
-    releaseDate: "1/2025",
-    submissions: "",
-    phone: "01092824584",
-    nationalId: "27608172401309",
-    signature: "",
-  },
+  // ... أكمل بنفس الصيغة إذا أردت تحميل المزيد
 }
 
 async function seedReleasedPrisoners() {
