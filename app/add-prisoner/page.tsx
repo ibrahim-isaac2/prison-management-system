@@ -14,11 +14,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Save, UserPlus } from "lucide-react"
-import LoginForm from "@/components/login-form"
+import { Save } from "lucide-react"
 import { useRouter } from "next/navigation"
-import BackToHomeButton from "@/components/back-to-home-button"
-import Footer from "@/components/layout/footer"
 
 export default function AddPrisonerPage() {
   const { user, isLoading } = useAuth()
@@ -29,6 +26,8 @@ export default function AddPrisonerPage() {
     prison: "",
     family: "",
     residence: "",
+    childrenCount: "",
+    educationStatus: "",
     years: "",
     from: "",
     to: "",
@@ -64,6 +63,8 @@ export default function AddPrisonerPage() {
         prison: "",
         family: "",
         residence: "",
+        childrenCount: "",
+        educationStatus: "",
         years: "",
         from: "",
         to: "",
@@ -86,53 +87,23 @@ export default function AddPrisonerPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-blue-600">جاري التحميل...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!user?.isAuthenticated) {
-    return <LoginForm />
-  }
-
-  if (user.role !== "admin") {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="container mx-auto px-4 py-8">
-          <Alert variant="destructive">
-            <AlertDescription className="text-right" dir="rtl">
-              ليس لديك صلاحية للوصول إلى هذه الصفحة
-            </AlertDescription>
-          </Alert>
-        </div>
+        <div>جاري التحميل...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div>
       <Navbar />
-
-      <div className="container mx-auto px-4 py-8 flex-1">
-        <BackToHomeButton />
-
-        <Card className="max-w-4xl mx-auto">
+      <div className="max-w-3xl mx-auto p-4">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-xl md:text-2xl font-bold text-blue-800 text-right flex items-center justify-end">
-              <UserPlus className="ml-2 h-5 w-5 md:h-6 md:w-6" />
-              إضافة سجين جديد
-            </CardTitle>
+            <CardTitle className="text-right">إضافة سجين جديد</CardTitle>
           </CardHeader>
-          <CardContent className="p-4 md:p-6">
+          <CardContent>
             {message && (
-              <Alert variant={message.type === "success" ? "default" : "destructive"} className="mb-6">
-                <AlertDescription className="text-right" dir="rtl">
-                  {message.text}
-                </AlertDescription>
+              <Alert variant={message.type === "success" ? "default" : "destructive"} className="mb-4">
+                <AlertDescription>{message.text}</AlertDescription>
               </Alert>
             )}
 
@@ -214,6 +185,35 @@ export default function AddPrisonerPage() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="childrenCount" className="text-right block">
+                    عدد الأبناء
+                  </Label>
+                  <Input
+                    id="childrenCount"
+                    name="childrenCount"
+                    type="number"
+                    value={formData.childrenCount}
+                    onChange={handleInputChange}
+                    className="text-right"
+                    dir="rtl"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="educationStatus" className="text-right block">
+                    الحالة الدراسية
+                  </Label>
+                  <Input
+                    id="educationStatus"
+                    name="educationStatus"
+                    value={formData.educationStatus}
+                    onChange={handleInputChange}
+                    className="text-right"
+                    dir="rtl"
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="years" className="text-right block">
                     عدد السنوات *
                   </Label>
@@ -260,37 +260,29 @@ export default function AddPrisonerPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="phone" className="text-right block">
-                    رقم الهاتف
+                    هاتف
                   </Label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    className="text-right"
-                    dir="rtl"
-                  />
+                  <Input id="phone" name="phone" value={formData.phone} onChange={handleInputChange} className="text-right" dir="rtl" />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="nationalId" className="text-right block">
-                    الرقم القومي *
+                    الرقم القومي
                   </Label>
-                  <Input
-                    id="nationalId"
-                    name="nationalId"
-                    value={formData.nationalId}
-                    onChange={handleInputChange}
-                    required
-                    className="text-right"
-                    dir="rtl"
-                  />
+                  <Input id="nationalId" name="nationalId" value={formData.nationalId} onChange={handleInputChange} className="text-right" dir="rtl" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signature" className="text-right block">
+                    توقيع
+                  </Label>
+                  <Input id="signature" name="signature" value={formData.signature} onChange={handleInputChange} className="text-right" dir="rtl" />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="submissions" className="text-right block">
-                  ملاحظات
+                  ملاحظات / مرافعات
                 </Label>
                 <Textarea
                   id="submissions"
@@ -312,8 +304,6 @@ export default function AddPrisonerPage() {
           </CardContent>
         </Card>
       </div>
-
-      <Footer />
     </div>
   )
 }
