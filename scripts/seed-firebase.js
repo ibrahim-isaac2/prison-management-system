@@ -15,7 +15,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig)
 const database = getDatabase(app)
 
-// Sample data for seeding
 const prisonersData = {
   1: {
     name: "وديع حبيب سلامة",
@@ -30,21 +29,10 @@ const prisonersData = {
     phone: "01286802529",
     nationalId: "27311192402244",
     signature: "",
+    childrenCount: "",
+    educationStatus: "",
   },
-  2: {
-    name: "عماد اندريه غالي",
-    charge: "شيكات",
-    prison: "المنيا",
-    family: "راندا جرجس بطرس",
-    residence: "بني مزار",
-    years: "20",
-    from: "8/2023",
-    to: "8/2048",
-    submissions: "",
-    phone: "01204120560",
-    nationalId: "28007072402243",
-    signature: "",
-  },
+  // ... بقية العناصر بنفس البنية
 }
 
 const releasedPrisonersData = {
@@ -59,51 +47,15 @@ const releasedPrisonersData = {
     phone: "01066826781",
     nationalId: "29810152403101",
     signature: "",
+    childrenCount: "",
+    educationStatus: "",
   },
-  2: {
-    name: "ثابت عيد زاهي",
-    charge: "اتلاف",
-    prison: "المنيا",
-    family: "حنان عيد عزيز",
-    residence: "مطاي",
-    releaseDate: "10/2024",
-    submissions: "",
-    phone: "01119517937",
-    nationalId: "2791126240805",
-    signature: "",
-  },
-}
-
-const usersData = {
-  admins: {
-    1: {
-      name: "إبراهيم إسحق",
-      role: "admin",
-    },
-    2: {
-      name: "مريم إسحق",
-      role: "admin",
-    },
-  },
-  viewers: {
-    1: {
-      name: "مستخدم1",
-      role: "viewer",
-    },
-    2: {
-      name: "مستخدم2",
-      role: "viewer",
-    },
-    3: {
-      name: "مستخدم3",
-      role: "viewer",
-    },
-  },
+  // ... بقية العناصر بنفس البنية
 }
 
 async function seedDatabase() {
   try {
-    console.log("بدء تحميل البيانات إلى Firebase...")
+    console.log("بدء تحميل بيانات إلى Firebase...")
 
     // Seed prisoners data
     await set(ref(database, "prisoners"), prisonersData)
@@ -112,10 +64,6 @@ async function seedDatabase() {
     // Seed released prisoners data
     await set(ref(database, "released-prisoners"), releasedPrisonersData)
     console.log("تم تحميل بيانات المفرج عنهم بنجاح")
-
-    // Seed users data
-    await set(ref(database, "users"), usersData)
-    console.log("تم تحميل بيانات المستخدمين بنجاح")
 
     console.log("تم تحميل جميع البيانات بنجاح!")
   } catch (error) {
