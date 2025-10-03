@@ -3,9 +3,18 @@
 import type { Prisoner } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, MapPin, User, FileText, Edit, Trash2, Users, GraduationCap } from "lucide-react"
+import { Calendar, MapPin, User, FileText, Edit, Trash2, Users, GraduationCap, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/auth-context"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { useState } from "react"
 
 interface PrisonerCardProps {
   prisoner: Prisoner
@@ -15,6 +24,7 @@ interface PrisonerCardProps {
 
 export default function PrisonerCard({ prisoner, onEdit, onDelete }: PrisonerCardProps) {
   const { user } = useAuth()
+  const [isOpen, setIsOpen] = useState(false)
 
   return (
     <Card className="mb-4 overflow-hidden border-2 border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-gradient-to-br from-card via-card to-muted/20">
@@ -127,7 +137,126 @@ export default function PrisonerCard({ prisoner, onEdit, onDelete }: PrisonerCar
             </div>
           </div>
         )}
+
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogTrigger asChild>
+            <Button
+              className="w-full mt-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md transition-all duration-300 hover:shadow-lg"
+              size="lg"
+            >
+              <Eye className="h-5 w-5 ml-2" />
+              عرض كل البيانات
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold text-right bg-gradient-to-l from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                البيانات الكاملة - {prisoner.name}
+              </DialogTitle>
+              <DialogDescription className="text-right">جميع المعلومات التفصيلية للسجين</DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100/50 border border-blue-200">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                      <User className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="text-sm font-semibold text-blue-900">الاسم الكامل</span>
+                  </div>
+                  <p className="text-lg font-bold text-blue-700 mr-13">{prisoner.name}</p>
+                </div>
+
+                <div className="p-4 rounded-lg bg-gradient-to-r from-indigo-50 to-indigo-100/50 border border-indigo-200">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center">
+                      <MapPin className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="text-sm font-semibold text-indigo-900">السجن</span>
+                  </div>
+                  <p className="text-lg font-bold text-indigo-700 mr-13">{prisoner.prison}</p>
+                </div>
+
+                <div className="p-4 rounded-lg bg-gradient-to-r from-emerald-50 to-emerald-100/50 border border-emerald-200">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
+                      <Users className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="text-sm font-semibold text-emerald-900">العائلة</span>
+                  </div>
+                  <p className="text-lg font-bold text-emerald-700 mr-13">{prisoner.family || "غير محدد"}</p>
+                </div>
+
+                <div className="p-4 rounded-lg bg-gradient-to-r from-orange-50 to-orange-100/50 border border-orange-200">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
+                      <MapPin className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="text-sm font-semibold text-orange-900">الإقامة</span>
+                  </div>
+                  <p className="text-lg font-bold text-orange-700 mr-13">{prisoner.residence || "غير محدد"}</p>
+                </div>
+
+                <div className="p-4 rounded-lg bg-gradient-to-r from-pink-50 to-pink-100/50 border border-pink-200">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-pink-600 flex items-center justify-center">
+                      <User className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="text-sm font-semibold text-pink-900">عدد الأبناء</span>
+                  </div>
+                  <p className="text-lg font-bold text-pink-700 mr-13">{prisoner.childrenCount || "غير محدد"}</p>
+                </div>
+
+                <div className="p-4 rounded-lg bg-gradient-to-r from-purple-50 to-purple-100/50 border border-purple-200">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                      <GraduationCap className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="text-sm font-semibold text-purple-900">الحالة الدراسية</span>
+                  </div>
+                  <p className="text-lg font-bold text-purple-700 mr-13">{prisoner.educationStatus || "غير محدد"}</p>
+                </div>
+
+                <div className="p-4 rounded-lg bg-gradient-to-r from-cyan-50 to-cyan-100/50 border border-cyan-200">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center">
+                      <Calendar className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="text-sm font-semibold text-cyan-900">مدة العقوبة</span>
+                  </div>
+                  <p className="text-lg font-bold text-cyan-700 mr-13">{prisoner.years || "غير محدد"}</p>
+                </div>
+
+                <div className="p-4 rounded-lg bg-gradient-to-r from-slate-50 to-slate-100/50 border border-slate-200">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-500 to-slate-600 flex items-center justify-center">
+                      <FileText className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="text-sm font-semibold text-slate-900">الرقم القومي</span>
+                  </div>
+                  <p className="text-lg font-bold text-slate-700 mr-13 font-mono">
+                    {prisoner.nationalId || "غير محدد"}
+                  </p>
+                </div>
+              </div>
+
+              {prisoner.submissions && (
+                <div className="p-5 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg border-2 border-amber-300 shadow-md">
+                  <div className="flex items-start gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center flex-shrink-0">
+                      <FileText className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="text-base font-bold text-amber-900">التقديمات</span>
+                  </div>
+                  <p className="text-base text-amber-900 leading-relaxed mr-13">{prisoner.submissions}</p>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   )
 }
+
