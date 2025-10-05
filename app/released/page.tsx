@@ -4,19 +4,19 @@ import { useAuth } from "@/lib/auth-context"
 import { useEffect, useState } from "react"
 import { database } from "@/lib/firebase"
 import { ref, onValue } from "firebase/database"
-import { deleteReleasedPrisoner } from "@/lib/firebase-operations" // استيراد دالة الحذف
+import { deleteReleasedPrisoner } from "@/lib/firebase-operations"
 import type { ReleasedPrisoner } from "@/lib/types"
 import Navbar from "@/components/layout/navbar"
 import ReleasedPrisonerCard from "@/components/released-prisoner-card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Download, Search, RefreshCw, Trash2 } from "lucide-react" // استيراد Trash2
+import { Download, Search, RefreshCw, Trash2 } from "lucide-react"
 import LoginForm from "@/components/login-form"
 import BackToHomeButton from "@/components/back-to-home-button"
 import Footer from "@/components/layout/footer"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import EditReleasedPrisonerForm from "@/components/edit-released-prisoner-form"
-import { Alert, AlertDescription } from "@/components/ui/alert" // استيراد Alert
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function ReleasedPage() {
   const { user, isLoading } = useAuth()
@@ -28,7 +28,6 @@ export default function ReleasedPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedReleasedPrisoner, setSelectedReleasedPrisoner] = useState<ReleasedPrisoner | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<{
-    // New state for delete confirmation
     show: boolean
     prisonerId: string
     prisonerName: string
@@ -37,7 +36,7 @@ export default function ReleasedPage() {
     prisonerId: "",
     prisonerName: "",
   })
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null) // For success/error messages
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
   useEffect(() => {
     if (user?.isAuthenticated) {
@@ -45,56 +44,32 @@ export default function ReleasedPage() {
       setError(null)
 
       const releasedRef = ref(database, "released-prisoners")
-
-      const unsubscribe = onValue(
-        releasedRef,
-        (snapshot) => {
-          const data = snapshot.val()
-          console.log("Firebase data snapshot for released-prisoners:", data)
-
-          const combinedReleasedArray: ReleasedPrisoner[] = []
-
-          if (data) {
-            if (typeof data === "object" && !Array.isArray(data)) {
-              Object.keys(data).forEach((key) => {
-                if (key !== "releasedPrisoners") {
-                  combinedReleasedArray.push({
-                    id: key,
-                    ...data[key],
-                  })
-                }
+      const unsubscribe = onValue(releasedRef, (snapshot) => {
+        const data = snapshot.val()
+        console.log("Released prisoners snapshot data:", data) // تشخيص
+        const combinedReleasedArray: ReleasedPrisoner[] = []
+        if (data) {
+          if (typeof data === "object" && !Array.isArray(data)) {
+            Object.keys(data).forEach((key) => {
+              console.log(`Released prisoner key: ${key}, data:`, data[key]) // تشخيص
+              combinedReleasedArray.push({
+                id: key,
+                ...data[key],
               })
-            }
-
-            if (data.releasedPrisoners && typeof data.releasedPrisoners === "object") {
-              Object.keys(data.releasedPrisoners).forEach((key) => {
-                combinedReleasedArray.push({
-                  id: key,
-                  ...data.releasedPrisoners[key],
-                })
-              })
-            }
+            })
           }
-
-          const validReleasedPrisoners = combinedReleasedArray.filter(
-            (prisoner) => prisoner.name && prisoner.name.trim() !== "",
-          )
-
-          setReleasedPrisoners(validReleasedPrisoners)
-          setFilteredReleased(validReleasedPrisoners)
-          console.log("Combined and filtered released prisoners loaded:", validReleasedPrisoners.length)
-          setLoading(false)
-        },
-        (err) => {
-          console.error("Error loading released prisoners from Firebase:", err)
-          setError("حدث خطأ أثناء تحميل بيانات المفرج عنهم: " + err.message)
-          setLoading(false)
-        },
-      )
+        }
+        console.log("Total released prisoners loaded:", combinedReleasedArray.length) // تشخيص
+        setReleasedPrisoners(combinedReleasedArray)
+        setFilteredReleased(combinedReleasedArray)
+        setLoading(false)
+      }, (error) => {
+        console.error("Error loading released prisoners:", error) // تشخيص للأخطاء
+        setError("حدث خطأ أثناء تحميل بيانات المفرج عنهم: " + error.message)
+        setLoading(false)
+      })
 
       return () => unsubscribe()
-    } else {
-      setLoading(false)
     }
   }, [user?.isAuthenticated])
 
@@ -115,23 +90,18 @@ export default function ReleasedPage() {
   }
 
   const handleEditSuccess = () => {
-    console.log("Released prisoner updated successfully! Firebase listener should auto-update.")
     setMessage({ type: "success", text: "تم تحديث بيانات المفرج عنه بنجاح!" })
     setTimeout(() => setMessage(null), 3000)
   }
 
   const confirmDeleteReleasedPrisoner = (prisonerId: string, prisonerName: string) => {
-    setDeleteConfirm({
-      show: true,
-      prisonerId,
-      prisonerName,
-    })
+    setDeleteConfirm({ show: true, prisonerId, prisonerName })
   }
 
   const handleDeleteReleasedPrisoner = async () => {
     if (!deleteConfirm.prisonerId) return
 
-    setMessage(null) // Clear previous messages
+    setMessage(null)
     try {
       await deleteReleasedPrisoner(deleteConfirm.prisonerId)
       setMessage({ type: "success", text: `تم حذف المفرج عنه ${deleteConfirm.prisonerName} بنجاح!` })
@@ -158,9 +128,9 @@ export default function ReleasedPage() {
           body { font-family: Arial, sans-serif; margin: 20px; direction: rtl; }
           table { width: 100%; border-collapse: collapse; margin-top: 20px; }
           th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
-          th { background-color: #16a34a; color: white; }
+          th { background-color: #1e40af; color: white; }
           tr:nth-child(even) { background-color: #f2f2f2; }
-          h1 { text-align: center; color: #16a34a; }
+          h1 { text-align: center; color: #1e40af; }
           .header { text-align: center; margin-bottom: 30px; }
         </style>
       </head>
@@ -323,14 +293,13 @@ export default function ReleasedPage() {
                 key={prisoner.id}
                 prisoner={prisoner}
                 onEdit={handleEditReleasedPrisoner}
-                onDelete={confirmDeleteReleasedPrisoner} // Pass delete handler
+                onDelete={() => confirmDeleteReleasedPrisoner(prisoner.id, prisoner.name)}
               />
             ))}
           </div>
         )}
       </div>
 
-      {/* Edit Released Prisoner Dialog */}
       {selectedReleasedPrisoner && (
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <EditReleasedPrisonerForm
@@ -341,7 +310,6 @@ export default function ReleasedPage() {
         </Dialog>
       )}
 
-      {/* Delete Confirmation Dialog */}
       <Dialog
         open={deleteConfirm.show}
         onOpenChange={(open) => !open && setDeleteConfirm({ show: false, prisonerId: "", prisonerName: "" })}
