@@ -52,37 +52,24 @@ export default function ReleasedPage() {
           const data = snapshot.val()
           console.log("Firebase data snapshot for released-prisoners:", data)
 
-          const combinedReleasedArray: ReleasedPrisoner[] = []
+          const releasedArray: ReleasedPrisoner[] = []
 
           if (data) {
-            if (typeof data === "object" && !Array.isArray(data)) {
-              Object.keys(data).forEach((key) => {
-                if (key !== "releasedPrisoners") {
-                  combinedReleasedArray.push({
-                    id: key,
-                    ...data[key],
-                  })
-                }
+            Object.keys(data).forEach((key) => {
+              releasedArray.push({
+                id: key,
+                ...data[key],
               })
-            }
-
-            if (data.releasedPrisoners && typeof data.releasedPrisoners === "object") {
-              Object.keys(data.releasedPrisoners).forEach((key) => {
-                combinedReleasedArray.push({
-                  id: key,
-                  ...data.releasedPrisoners[key],
-                })
-              })
-            }
+            })
           }
 
-          const validReleasedPrisoners = combinedReleasedArray.filter(
+          const validReleasedPrisoners = releasedArray.filter(
             (prisoner) => prisoner.name && prisoner.name.trim() !== "",
           )
 
           setReleasedPrisoners(validReleasedPrisoners)
           setFilteredReleased(validReleasedPrisoners)
-          console.log("Combined and filtered released prisoners loaded:", validReleasedPrisoners.length)
+          console.log("Filtered released prisoners loaded:", validReleasedPrisoners.length)
           setLoading(false)
         },
         (err) => {
