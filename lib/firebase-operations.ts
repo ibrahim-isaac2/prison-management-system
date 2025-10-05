@@ -24,32 +24,24 @@ export const listenToReleasedPrisoners = (callback: (released: ReleasedPrisoner[
   const releasedRef = ref(database, "released-prisoners")
   return onValue(releasedRef, (snapshot) => {
     const data = snapshot.val()
+    console.log("Raw snapshot data:", data)
     if (data) {
       const combinedReleasedArray: ReleasedPrisoner[] = []
-
-      // Case 1: Data directly under "released-prisoners" with Firebase-generated keys
       if (typeof data === "object" && !Array.isArray(data)) {
         Object.keys(data).forEach((key) => {
-          if (key !== "releasedPrisoners") {
+          console.log(`Processing key: ${key}, Value:`, data[key])
+          const item = data[key]
+          if (item && typeof item === "object") { // تحقق من أن القيمة كائن
             combinedReleasedArray.push({
               id: key,
-              ...data[key],
-            })
+              ...item,
+            } as ReleasedPrisoner) // تجاوز أخطاء التحقق من الأنواع
           }
         })
       }
-
-      // Case 2: Data under a nested "releasedPrisoners" node
-      if (data.releasedPrisoners && typeof data.releasedPrisoners === "object") {
-        Object.keys(data.releasedPrisoners).forEach((key) => {
-          combinedReleasedArray.push({
-            id: key,
-            ...data.releasedPrisoners[key],
-          })
-        })
-      }
-
-      callback(combinedReleasedArray) // Remove filtering to include all records
+      // إزالة Case 2 إذا لم تكن هناك بيانات متداخلة
+      console.log("Combined array:", combinedReleasedArray)
+      callback(combinedReleasedArray)
     } else {
       callback([])
     }
