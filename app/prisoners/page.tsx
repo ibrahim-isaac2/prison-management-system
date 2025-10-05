@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth-context"
 import { useEffect, useState } from "react"
 import { database } from "@/lib/firebase"
 import { ref, onValue } from "firebase/database"
-import { deletePrisoner } from "@/lib/firebase-operations" // استيراد دالة الحذف
+import { deletePrisoner } from "@/lib/firebase-operations" // استيراد deletePrisoner
 import type { Prisoner } from "@/lib/types"
 import Navbar from "@/components/layout/navbar"
 import PrisonerCard from "@/components/prisoner-card"
