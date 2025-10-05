@@ -6,29 +6,40 @@ import { Badge } from "@/components/ui/badge"
 import { Calendar, MapPin, Phone, User, FileText, Edit, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/auth-context"
-import { deleteDoc, doc } from "firebase/firestore"
-import { db } from "@/lib/firebase"
 import { useState } from "react"
+import { deleteReleasedPrisoner } from "@/lib/firebase-operations" // دالة حذف مركزية
 
 interface ReleasedPrisonerCardProps {
   prisoner: ReleasedPrisoner
-  onEdit: (prisoner: ReleasedPrisoner) => void
+  onEdit?: (prisoner: ReleasedPrisoner) => void
+  onDelete?: (prisonerId: string, prisonerName: string) => void
 }
 
-export default function ReleasedPrisonerCard({ prisoner, onEdit }: ReleasedPrisonerCardProps) {
+export default function ReleasedPrisonerCard({ prisoner, onEdit, onDelete }: ReleasedPrisonerCardProps) {
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`هل أنت متأكد من حذف المفرج عنه "${name}"؟`)) return
+  const handleDeleteClick = async () => {
+    if (!prisoner?.id) return
+    if (!confirm(`هل أنت متأكد من حذف المفرج عنه "${prisoner.name}"؟`)) return
+
+    if (onDelete) {
+      try {
+        setLoading(true)
+        onDelete(prisoner.id, prisoner.name)
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
     try {
       setLoading(true)
-      await deleteDoc(doc(db, "released", id))
-      alert("✅ تم حذف المفرج عنه بنجاح")
+      await deleteReleasedPrisoner(prisoner.id)
       window.location.reload()
     } catch (error) {
-      console.error("❌ خطأ أثناء الحذف:", error)
-      alert("حدث خطأ أثناء الحذف")
+      console.error("Error deleting released prisoner:", error)
+      alert("حدث خطأ أثناء الحذف. افتح Console وشوف الرسالة.")
     } finally {
       setLoading(false)
     }
@@ -44,19 +55,21 @@ export default function ReleasedPrisonerCard({ prisoner, onEdit }: ReleasedPriso
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onEdit(prisoner)}
+                onClick={() => onEdit && onEdit(prisoner)}
                 className="text-green-600 border-green-600 hover:bg-green-600 hover:text-white"
               >
                 <Edit className="h-4 w-4" />
+                <span className="sr-only">تعديل</span>
               </Button>
               <Button
                 variant="destructive"
                 size="sm"
                 disabled={loading}
-                onClick={() => handleDelete(prisoner.id, prisoner.name)}
+                onClick={handleDeleteClick}
                 className="bg-red-600 hover:bg-red-700"
               >
                 <Trash2 className="h-4 w-4" />
+                <span className="sr-only">حذف</span>
               </Button>
             </div>
           )}
