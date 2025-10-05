@@ -4,19 +4,19 @@ import { useAuth } from "@/lib/auth-context"
 import { useEffect, useState } from "react"
 import { database } from "@/lib/firebase"
 import { ref, onValue } from "firebase/database"
-import { deletePrisoner } from "@/lib/firebase-operations" // استيراد deletePrisoner
+import { deletePrisoner } from "@/lib/firebase-operations"
 import type { Prisoner } from "@/lib/types"
 import Navbar from "@/components/layout/navbar"
 import PrisonerCard from "@/components/prisoner-card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Download, Search, Trash2 } from "lucide-react" // استيراد Trash2
+import { Download, Search, Trash2 } from "lucide-react"
 import LoginForm from "@/components/login-form"
 import BackToHomeButton from "@/components/back-to-home-button"
 import Footer from "@/components/layout/footer"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import EditPrisonerForm from "@/components/edit-prisoner-form"
-import { Alert, AlertDescription } from "@/components/ui/alert" // استيراد Alert
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function PrisonersPage() {
   const { user, isLoading } = useAuth()
@@ -27,7 +27,6 @@ export default function PrisonersPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedPrisoner, setSelectedPrisoner] = useState<Prisoner | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<{
-    // New state for delete confirmation
     show: boolean
     prisonerId: string
     prisonerName: string
@@ -36,24 +35,33 @@ export default function PrisonersPage() {
     prisonerId: "",
     prisonerName: "",
   })
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null) // For success/error messages
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
   useEffect(() => {
     if (user?.isAuthenticated) {
+      setLoading(true)
       const prisonersRef = ref(database, "prisoners")
       const unsubscribe = onValue(prisonersRef, (snapshot) => {
         const data = snapshot.val()
+        console.log("Prisoners snapshot data:", data) // تشخيص
+        const prisonersArray: Prisoner[] = []
         if (data) {
-          const prisonersArray = Object.keys(data).map((key) => ({
-            id: key,
-            ...data[key],
-          }))
-          setPrisoners(prisonersArray)
-          setFilteredPrisoners(prisonersArray)
-        } else {
-          setPrisoners([])
-          setFilteredPrisoners([])
+          if (typeof data === "object" && !Array.isArray(data)) {
+            Object.keys(data).forEach((key) => {
+              console.log(`Prisoner key: ${key}, data:`, data[key]) // تشخيص
+              prisonersArray.push({
+                id: key,
+                ...data[key],
+              })
+            })
+          }
         }
+        console.log("Total prisoners loaded:", prisonersArray.length) // تشخيص
+        setPrisoners(prisonersArray)
+        setFilteredPrisoners(prisonersArray)
+        setLoading(false)
+      }, (error) => {
+        console.error("Error loading prisoners:", error) // تشخيص للأخطاء
         setLoading(false)
       })
 
@@ -78,23 +86,18 @@ export default function PrisonersPage() {
   }
 
   const handleEditSuccess = () => {
-    console.log("Prisoner updated successfully!")
     setMessage({ type: "success", text: "تم تحديث بيانات السجين بنجاح!" })
     setTimeout(() => setMessage(null), 3000)
   }
 
   const confirmDeletePrisoner = (prisonerId: string, prisonerName: string) => {
-    setDeleteConfirm({
-      show: true,
-      prisonerId,
-      prisonerName,
-    })
+    setDeleteConfirm({ show: true, prisonerId, prisonerName })
   }
 
   const handleDeletePrisoner = async () => {
     if (!deleteConfirm.prisonerId) return
 
-    setMessage(null) // Clear previous messages
+    setMessage(null)
     try {
       await deletePrisoner(deleteConfirm.prisonerId)
       setMessage({ type: "success", text: `تم حذف السجين ${deleteConfirm.prisonerName} بنجاح!` })
@@ -246,14 +249,13 @@ export default function PrisonersPage() {
                 key={prisoner.id}
                 prisoner={prisoner}
                 onEdit={handleEditPrisoner}
-                onDelete={confirmDeletePrisoner} // Pass delete handler
+                onDelete={() => confirmDeletePrisoner(prisoner.id, prisoner.name)}
               />
             ))}
           </div>
         )}
       </div>
 
-      {/* Edit Prisoner Dialog */}
       {selectedPrisoner && (
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <EditPrisonerForm
@@ -264,7 +266,6 @@ export default function PrisonersPage() {
         </Dialog>
       )}
 
-      {/* Delete Confirmation Dialog */}
       <Dialog
         open={deleteConfirm.show}
         onOpenChange={(open) => !open && setDeleteConfirm({ show: false, prisonerId: "", prisonerName: "" })}
