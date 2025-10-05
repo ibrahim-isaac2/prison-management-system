@@ -3,16 +3,34 @@ import { ref, onValue, push, remove, update, set } from "firebase/database"
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth"
 import type { Prisoner, ReleasedPrisoner, User } from "./types"
 
-// Real-time listeners for data
+// Real-time listeners for data (معدل لعرض الكل بما في ذلك البيانات الفارغة)
 export const listenToPrisoners = (callback: (prisoners: Prisoner[]) => void) => {
   const prisonersRef = ref(database, "prisoners")
   return onValue(prisonersRef, (snapshot) => {
     const data = snapshot.val()
+    const prisonersArray: Prisoner[] = []
     if (data) {
-      const prisonersArray = Object.keys(data).map((key) => ({
-        id: key,
-        ...data[key],
-      }))
+      // Direct under "prisoners" (flat structure - new/default)
+      if (typeof data === "object" && !Array.isArray(data)) {
+        Object.keys(data).forEach((key) => {
+          prisonersArray.push({
+            id: key,
+            ...data[key],
+          })
+        })
+      }
+
+      // Nested "prisoners" (old structure - للتوافق إذا بقي شيء)
+      if (data.prisoners && typeof data.prisoners === "object") {
+        Object.keys(data.prisoners).forEach((key) => {
+          prisonersArray.push({
+            id: key,
+            ...data.prisoners[key],
+          })
+        })
+      }
+
+      // عرض الكل بدون تصفية (إزالة filter)
       callback(prisonersArray)
     } else {
       callback([])
@@ -24,22 +42,20 @@ export const listenToReleasedPrisoners = (callback: (released: ReleasedPrisoner[
   const releasedRef = ref(database, "released-prisoners")
   return onValue(releasedRef, (snapshot) => {
     const data = snapshot.val()
-    if (data) {
-      const combinedReleasedArray: ReleasedPrisoner[] = []
+    const combinedReleasedArray: ReleasedPrisoner[] = []
 
-      // Case 1: Data directly under "released-prisoners" with Firebase-generated keys (newly added)
+    if (data) {
+      // Direct under "released-prisoners" (flat structure - new/default بعد الاستيراد)
       if (typeof data === "object" && !Array.isArray(data)) {
         Object.keys(data).forEach((key) => {
-          if (key !== "releasedPrisoners") {
-            combinedReleasedArray.push({
-              id: key,
-              ...data[key],
-            })
-          }
+          combinedReleasedArray.push({
+            id: key,
+            ...data[key],
+          })
         })
       }
 
-      // Case 2: Data under a nested "releasedPrisoners" node with numerical keys (old seeded data)
+      // Nested "releasedPrisoners" (old structure - للتوافق إذا بقي)
       if (data.releasedPrisoners && typeof data.releasedPrisoners === "object") {
         Object.keys(data.releasedPrisoners).forEach((key) => {
           combinedReleasedArray.push({
@@ -49,12 +65,8 @@ export const listenToReleasedPrisoners = (callback: (released: ReleasedPrisoner[
         })
       }
 
-      // Filter out records with empty names
-      const validReleasedPrisoners = combinedReleasedArray.filter(
-        (prisoner) => prisoner.name && prisoner.name.trim() !== "",
-      )
-
-      callback(validReleasedPrisoners)
+      // عرض الكل بدون تصفية (إزالة filter)
+      callback(combinedReleasedArray)
     } else {
       callback([])
     }
@@ -112,25 +124,16 @@ export const addUser = async (email: string, password: string, name: string, rol
 }
 
 // Delete operations
-// Modified deleteUser to delete from Firebase Auth and Realtime Database
 export const deleteUser = async (userId: string, userRole: "admin" | "viewer") => {
-  const auth = getAuth()
-  // Deleting a user from Firebase Auth client-side requires the user to be currently signed in.
-  // To delete other users, you typically need Firebase Admin SDK (server-side) or a Cloud Function.
-  // For this client-side example, we'll only delete from Realtime Database.
-  // If you need to delete from Auth, consider implementing a Cloud Function.
-
   const userDbRef = ref(database, `users/${userRole}s/${userId}`)
   return await remove(userDbRef)
 }
 
-// New: Delete Prisoner
 export const deletePrisoner = async (prisonerId: string) => {
   const prisonerRef = ref(database, `prisoners/${prisonerId}`)
   return await remove(prisonerRef)
 }
 
-// New: Delete Released Prisoner
 export const deleteReleasedPrisoner = async (releasedId: string) => {
   const releasedRef = ref(database, `released-prisoners/${releasedId}`)
   return await remove(releasedRef)
