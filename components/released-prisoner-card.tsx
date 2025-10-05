@@ -3,47 +3,18 @@
 import type { ReleasedPrisoner } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, MapPin, Phone, User, FileText, Edit, Trash2 } from "lucide-react"
+import { Calendar, MapPin, Phone, User, FileText, Edit, Trash2 } from "lucide-react" // استيراد Trash2
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/auth-context"
-import { useState } from "react"
-import { deleteReleasedPrisoner } from "@/lib/firebase-operations" // دالة حذف مركزية
 
 interface ReleasedPrisonerCardProps {
   prisoner: ReleasedPrisoner
-  onEdit?: (prisoner: ReleasedPrisoner) => void
-  onDelete?: (prisonerId: string, prisonerName: string) => void
+  onEdit: (prisoner: ReleasedPrisoner) => void
+  onDelete: (prisonerId: string, prisonerName: string) => void // New prop for delete action
 }
 
 export default function ReleasedPrisonerCard({ prisoner, onEdit, onDelete }: ReleasedPrisonerCardProps) {
   const { user } = useAuth()
-  const [loading, setLoading] = useState(false)
-
-  const handleDeleteClick = async () => {
-    if (!prisoner?.id) return
-    if (!confirm(`هل أنت متأكد من حذف المفرج عنه "${prisoner.name}"؟`)) return
-
-    if (onDelete) {
-      try {
-        setLoading(true)
-        onDelete(prisoner.id, prisoner.name)
-      } finally {
-        setLoading(false)
-      }
-      return
-    }
-
-    try {
-      setLoading(true)
-      await deleteReleasedPrisoner(prisoner.id)
-      window.location.reload()
-    } catch (error) {
-      console.error("Error deleting released prisoner:", error)
-      alert("حدث خطأ أثناء الحذف. افتح Console وشوف الرسالة.")
-    } finally {
-      setLoading(false)
-    }
-  }
 
   return (
     <Card className="h-full hover:shadow-lg transition-shadow flex flex-col">
@@ -52,20 +23,21 @@ export default function ReleasedPrisonerCard({ prisoner, onEdit, onDelete }: Rel
           {prisoner.name || "غير محدد"}
           {user?.role === "admin" && (
             <div className="flex gap-2">
+              {" "}
+              {/* Group buttons */}
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onEdit && onEdit(prisoner)}
+                onClick={() => onEdit(prisoner)}
                 className="text-green-600 border-green-600 hover:bg-green-600 hover:text-white"
               >
                 <Edit className="h-4 w-4" />
                 <span className="sr-only">تعديل</span>
               </Button>
               <Button
-                variant="destructive"
+                variant="destructive" // Style for delete button
                 size="sm"
-                disabled={loading}
-                onClick={handleDeleteClick}
+                onClick={() => onDelete(prisoner.id, prisoner.name)} // Call onDelete
                 className="bg-red-600 hover:bg-red-700"
               >
                 <Trash2 className="h-4 w-4" />
@@ -78,7 +50,6 @@ export default function ReleasedPrisonerCard({ prisoner, onEdit, onDelete }: Rel
           {prisoner.charge || "غير محدد"}
         </Badge>
       </CardHeader>
-
       <CardContent className="space-y-3 text-right flex-1" dir="rtl">
         <div className="flex items-center space-x-2 space-x-reverse">
           <MapPin className="h-4 w-4 text-green-600" />
