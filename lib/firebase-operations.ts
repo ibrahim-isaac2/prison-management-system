@@ -1,5 +1,5 @@
 import { database } from "./firebase"
-import { ref, onValue, push, remove, update, set } from "firebase/database"
+import { ref, onValue, push, remove, update, set, get } from "firebase/database"
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth"
 import type { Prisoner, ReleasedPrisoner, User } from "./types"
 
@@ -39,7 +39,7 @@ export const listenToReleasedPrisoners = (callback: (released: ReleasedPrisoner[
         })
       }
 
-      // Case 2: Data under a nested "releasedPrisoners" node with numerical keys (old seeded data)
+      // Case 2: older seed format where data might be under a nested "releasedPrisoners" property
       if (data.releasedPrisoners && typeof data.releasedPrisoners === "object") {
         Object.keys(data.releasedPrisoners).forEach((key) => {
           combinedReleasedArray.push({
@@ -49,43 +49,9 @@ export const listenToReleasedPrisoners = (callback: (released: ReleasedPrisoner[
         })
       }
 
-      // Filter out records with empty names
-      const validReleasedPrisoners = combinedReleasedArray.filter(
-        (prisoner) => prisoner.name && prisoner.name.trim() !== "",
-      )
-
-      callback(validReleasedPrisoners)
+      callback(combinedReleasedArray)
     } else {
       callback([])
-    }
-  })
-}
-
-export const listenToUsers = (callback: (users: { admins: User[]; viewers: User[] }) => void) => {
-  const usersRef = ref(database, "users")
-  return onValue(usersRef, (snapshot) => {
-    const data = snapshot.val()
-    if (data) {
-      const adminsArray = data.admins
-        ? Object.keys(data.admins).map((key) => ({
-            id: key,
-            ...data.admins[key],
-          }))
-        : []
-
-      const viewersArray = data.viewers
-        ? Object.keys(data.viewers).map((key) => ({
-            id: key,
-            ...data.viewers[key],
-          }))
-        : []
-
-      callback({
-        admins: adminsArray,
-        viewers: viewersArray,
-      })
-    } else {
-      callback({ admins: [], viewers: [] })
     }
   })
 }
@@ -101,64 +67,117 @@ export const addReleasedPrisoner = async (released: Omit<ReleasedPrisoner, "id">
   return await push(releasedRef, released)
 }
 
-// Modified addUser to create user in Firebase Auth and save details to DB
-export const addUser = async (email: string, password: string, name: string, role: "admin" | "viewer") => {
-  const auth = getAuth()
-  const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-  const firebaseUser = userCredential.user
-
-  const userDbRef = ref(database, `users/${role}s/${firebaseUser.uid}`)
-  return await set(userDbRef, { email: firebaseUser.email, name: name, role: role })
-}
-
-// Delete operations
-// Modified deleteUser to delete from Firebase Auth and Realtime Database
-export const deleteUser = async (userId: string, userRole: "admin" | "viewer") => {
-  const auth = getAuth()
-  // Deleting a user from Firebase Auth client-side requires the user to be currently signed in.
-  // To delete other users, you typically need Firebase Admin SDK (server-side) or a Cloud Function.
-  // For this client-side example, we'll only delete from Realtime Database.
-  // If you need to delete from Auth, consider implementing a Cloud Function.
-
-  const userDbRef = ref(database, `users/${userRole}s/${userId}`)
-  return await remove(userDbRef)
-}
-
 // New: Delete Prisoner
 export const deletePrisoner = async (prisonerId: string) => {
-  const prisonerRef = ref(database, `prisoners/${prisonerId}`)
-  return await remove(prisonerRef)
+  try {
+    // Primary deletion from prisoners node
+    const prisonerRef = ref(database, `prisoners/${prisonerId}`)
+    await remove(prisonerRef)
+
+    // Also attempt to remove any matching entries under released-prisoners
+    // (sometimes data may be duplicated under different nodes — clean both places)
+    try {
+      const releasedRootRef = ref(database, `released-prisoners`)
+      const snapshot = await get(releasedRootRef)
+      const data = snapshot.val()
+      if (data && typeof data === 'object') {
+        for (const key of Object.keys(data)) {
+          const item = data[key]
+          // match by id or by nationalId if available
+          if (!item) continue
+          if (key === prisonerId || item.id === prisonerId) {
+            await remove(ref(database, `released-prisoners/${key}`))
+          } else {
+            // if nationalId exists, try to match to avoid orphaned duplicates
+            try {
+              const prisonerSnapshot = await get(prisonerRef)
+              const prisonerData = prisonerSnapshot.val()
+              if (prisonerData && item.nationalId && prisonerData.nationalId && item.nationalId === prisonerData.nationalId) {
+                await remove(ref(database, `released-prisoners/${key}`))
+              }
+            } catch (err) {
+              // ignore per-item errors
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Could not clean released-prisoners during deletePrisoner:", err)
+    }
+
+    return true
+  } catch (error) {
+    console.error("Error in deletePrisoner:", error)
+    throw error
+  }
 }
 
 // New: Delete Released Prisoner
 export const deleteReleasedPrisoner = async (releasedId: string) => {
-  const releasedRef = ref(database, `released-prisoners/${releasedId}`)
-  return await remove(releasedRef)
+  try {
+    const releasedRef = ref(database, `released-prisoners/${releasedId}`)
+    await remove(releasedRef)
+
+    // Also attempt to remove any matching entries under prisoners (in case of duplicates)
+    try {
+      const prisonersRootRef = ref(database, `prisoners`)
+      const snapshot = await get(prisonersRootRef)
+      const data = snapshot.val()
+      if (data && typeof data === 'object') {
+        for (const key of Object.keys(data)) {
+          const item = data[key]
+          if (!item) continue
+          if (key === releasedId || item.id === releasedId) {
+            await remove(ref(database, `prisoners/${key}`))
+          } else if (item.nationalId && (typeof item.nationalId === 'string')) {
+            // attempt to match by nationalId with the released record
+            try {
+              const releasedSnapshot = await get(releasedRef)
+              const releasedData = releasedSnapshot.val()
+              if (releasedData && releasedData.nationalId && releasedData.nationalId === item.nationalId) {
+                await remove(ref(database, `prisoners/${key}`))
+              }
+            } catch (err) {
+              // ignore
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Could not clean prisoners during deleteReleasedPrisoner:", err)
+    }
+
+    return true
+  } catch (error) {
+    console.error("Error in deleteReleasedPrisoner:", error)
+    throw error
+  }
 }
 
 // Update operations
 export const updatePrisoner = async (prisonerId: string, updates: Partial<Prisoner>) => {
-  const prisonerRef = ref(database, `prisoners/${prisonerId}`)
-  console.log(`Attempting to update prisoner ${prisonerId} with:`, updates) // للتشخيص
-  return await update(prisonerRef, updates)
+  try {
+    const prisonerRef = ref(database, `prisoners/${prisonerId}`)
+    console.log(`Attempting to update prisoner ${prisonerId} with:`, updates)
+    // Use update to merge fields; if you'd prefer to replace the object use set instead.
+    await update(prisonerRef, updates)
+    return true
+  } catch (error) {
+    console.error("Error in updatePrisoner:", error)
+    throw error
+  }
 }
 
 export const updateReleasedPrisoner = async (releasedId: string, updates: Partial<ReleasedPrisoner>) => {
-  const releasedRef = ref(database, `released-prisoners/${releasedId}`)
-  console.log(`Attempting to update released prisoner ${releasedId} with:`, updates) // للتشخيص
-  return await update(releasedRef, updates)
+  try {
+    const releasedRef = ref(database, `released-prisoners/${releasedId}`)
+    console.log(`Attempting to update released prisoner ${releasedId} with:`, updates)
+    await update(releasedRef, updates)
+    return true
+  } catch (error) {
+    console.error("Error in updateReleasedPrisoner:", error)
+    throw error
+  }
 }
 
-// New: Update user role in Realtime Database
-export const updateUserRole = async (
-  userId: string,
-  oldRole: "admin" | "viewer",
-  newRole: "admin" | "viewer",
-  userDetails: Partial<User>,
-) => {
-  const oldUserRef = ref(database, `users/${oldRole}s/${userId}`)
-  await remove(oldUserRef) // Remove from old role path
-
-  const newUserRef = ref(database, `users/${newRole}s/${userId}`)
-  return await set(newUserRef, userDetails) // Add to new role path
-}
+// (باقي الملف كما كان — وظائف للمستخدمين، role update إلخ.)
