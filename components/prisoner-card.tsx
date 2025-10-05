@@ -3,18 +3,36 @@
 import type { Prisoner } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, MapPin, Phone, User, FileText, Edit, Trash2 } from "lucide-react" // استيراد Trash2
+import { Calendar, MapPin, Phone, User, FileText, Edit, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/auth-context"
+import { deleteDoc, doc } from "firebase/firestore"
+import { db } from "@/lib/firebase"
+import { useState } from "react"
 
 interface PrisonerCardProps {
   prisoner: Prisoner
   onEdit: (prisoner: Prisoner) => void
-  onDelete: (prisonerId: string, prisonerName: string) => void // New prop for delete action
 }
 
-export default function PrisonerCard({ prisoner, onEdit, onDelete }: PrisonerCardProps) {
+export default function PrisonerCard({ prisoner, onEdit }: PrisonerCardProps) {
   const { user } = useAuth()
+  const [loading, setLoading] = useState(false)
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`هل أنت متأكد من حذف السجين "${name}"؟`)) return
+    try {
+      setLoading(true)
+      await deleteDoc(doc(db, "prisoners", id))
+      alert("✅ تم حذف السجين بنجاح")
+      window.location.reload()
+    } catch (error) {
+      console.error("❌ خطأ أثناء الحذف:", error)
+      alert("حدث خطأ أثناء الحذف")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <Card className="h-full hover:shadow-lg transition-shadow flex flex-col">
@@ -23,8 +41,6 @@ export default function PrisonerCard({ prisoner, onEdit, onDelete }: PrisonerCar
           {prisoner.name || "غير محدد"}
           {user?.role === "admin" && (
             <div className="flex gap-2">
-              {" "}
-              {/* Group buttons */}
               <Button
                 variant="outline"
                 size="sm"
@@ -32,16 +48,15 @@ export default function PrisonerCard({ prisoner, onEdit, onDelete }: PrisonerCar
                 className="text-blue-600 border-blue-600 hover:bg-blue-600 hover:text-white"
               >
                 <Edit className="h-4 w-4" />
-                <span className="sr-only">تعديل</span>
               </Button>
               <Button
-                variant="destructive" // Style for delete button
+                variant="destructive"
                 size="sm"
-                onClick={() => onDelete(prisoner.id, prisoner.name)} // Call onDelete
+                disabled={loading}
+                onClick={() => handleDelete(prisoner.id, prisoner.name)}
                 className="bg-red-600 hover:bg-red-700"
               >
                 <Trash2 className="h-4 w-4" />
-                <span className="sr-only">حذف</span>
               </Button>
             </div>
           )}
@@ -50,6 +65,7 @@ export default function PrisonerCard({ prisoner, onEdit, onDelete }: PrisonerCar
           {prisoner.charge || "غير محدد"}
         </Badge>
       </CardHeader>
+
       <CardContent className="space-y-3 text-right flex-1" dir="rtl">
         <div className="flex items-center space-x-2 space-x-reverse">
           <MapPin className="h-4 w-4 text-blue-600" />
