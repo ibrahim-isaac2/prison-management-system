@@ -3,16 +3,18 @@ import { ref, onValue, push, remove, update, set } from "firebase/database"
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth"
 import type { Prisoner, ReleasedPrisoner, User } from "./types"
 
-// Real-time listeners for data (معدل لعرض الكل بما في ذلك البيانات الفارغة)
+// Real-time listeners for data (معدل مع تشخيص)
 export const listenToPrisoners = (callback: (prisoners: Prisoner[]) => void) => {
   const prisonersRef = ref(database, "prisoners")
   return onValue(prisonersRef, (snapshot) => {
     const data = snapshot.val()
+    console.log("Prisoners snapshot data:", data) // للتشخيص
     const prisonersArray: Prisoner[] = []
     if (data) {
       // Direct under "prisoners" (flat structure - new/default)
       if (typeof data === "object" && !Array.isArray(data)) {
         Object.keys(data).forEach((key) => {
+          console.log(`Found prisoner with key: ${key}`, data[key]) // للتشخيص
           prisonersArray.push({
             id: key,
             ...data[key],
@@ -23,6 +25,7 @@ export const listenToPrisoners = (callback: (prisoners: Prisoner[]) => void) => 
       // Nested "prisoners" (old structure - للتوافق إذا بقي شيء)
       if (data.prisoners && typeof data.prisoners === "object") {
         Object.keys(data.prisoners).forEach((key) => {
+          console.log(`Found nested prisoner with key: ${key}`, data.prisoners[key]) // للتشخيص
           prisonersArray.push({
             id: key,
             ...data.prisoners[key],
@@ -30,9 +33,10 @@ export const listenToPrisoners = (callback: (prisoners: Prisoner[]) => void) => 
         })
       }
 
-      // عرض الكل بدون تصفية (إزالة filter)
-      callback(prisonersArray)
+      console.log("Total prisoners loaded:", prisonersArray.length) // للتشخيص
+      callback(prisonersArray) // عرض الكل بدون تصفية
     } else {
+      console.log("No prisoners data found") // للتشخيص
       callback([])
     }
   })
@@ -42,12 +46,14 @@ export const listenToReleasedPrisoners = (callback: (released: ReleasedPrisoner[
   const releasedRef = ref(database, "released-prisoners")
   return onValue(releasedRef, (snapshot) => {
     const data = snapshot.val()
+    console.log("Released prisoners snapshot data:", data) // للتشخيص
     const combinedReleasedArray: ReleasedPrisoner[] = []
 
     if (data) {
       // Direct under "released-prisoners" (flat structure - new/default بعد الاستيراد)
       if (typeof data === "object" && !Array.isArray(data)) {
         Object.keys(data).forEach((key) => {
+          console.log(`Found released prisoner with key: ${key}`, data[key]) // للتشخيص
           combinedReleasedArray.push({
             id: key,
             ...data[key],
@@ -58,6 +64,7 @@ export const listenToReleasedPrisoners = (callback: (released: ReleasedPrisoner[
       // Nested "releasedPrisoners" (old structure - للتوافق إذا بقي)
       if (data.releasedPrisoners && typeof data.releasedPrisoners === "object") {
         Object.keys(data.releasedPrisoners).forEach((key) => {
+          console.log(`Found nested released prisoner with key: ${key}`, data.releasedPrisoners[key]) // للتشخيص
           combinedReleasedArray.push({
             id: key,
             ...data.releasedPrisoners[key],
@@ -65,9 +72,10 @@ export const listenToReleasedPrisoners = (callback: (released: ReleasedPrisoner[
         })
       }
 
-      // عرض الكل بدون تصفية (إزالة filter)
-      callback(combinedReleasedArray)
+      console.log("Total released prisoners loaded:", combinedReleasedArray.length) // للتشخيص
+      callback(combinedReleasedArray) // عرض الكل بدون تصفية
     } else {
+      console.log("No released prisoners data found") // للتشخيص
       callback([])
     }
   })
