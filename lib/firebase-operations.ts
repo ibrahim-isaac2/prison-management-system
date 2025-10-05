@@ -9,12 +9,16 @@ export const listenToPrisoners = (callback: (prisoners: Prisoner[]) => void) => 
   return onValue(prisonersRef, (snapshot) => {
     const data = snapshot.val()
     if (data) {
+      // التعديل هنا: التأكد من معالجة جميع البيانات بشكل صحيح
       const prisonersArray = Object.keys(data).map((key) => ({
         id: key,
         ...data[key],
       }))
+      
+      console.log(`تم استرجاع ${prisonersArray.length} سجين من قاعدة البيانات`) // للتشخيص
       callback(prisonersArray)
     } else {
+      console.log("لا توجد بيانات سجناء في قاعدة البيانات") // للتشخيص
       callback([])
     }
   })
@@ -25,37 +29,40 @@ export const listenToReleasedPrisoners = (callback: (released: ReleasedPrisoner[
   return onValue(releasedRef, (snapshot) => {
     const data = snapshot.val()
     if (data) {
-      const combinedReleasedArray: ReleasedPrisoner[] = []
-
-      // Case 1: Data directly under "released-prisoners" with Firebase-generated keys (newly added)
+      const releasedArray: ReleasedPrisoner[] = []
+      
+      // التعديل هنا: تبسيط معالجة البيانات لضمان عرض جميع السجناء المفرج عنهم
       if (typeof data === "object" && !Array.isArray(data)) {
-        Object.keys(data).forEach((key) => {
-          if (key !== "releasedPrisoners") {
-            combinedReleasedArray.push({
-              id: key,
-              ...data[key],
-            })
-          }
-        })
-      }
-
-      // Case 2: Data under a nested "releasedPrisoners" node with numerical keys (old seeded data)
-      if (data.releasedPrisoners && typeof data.releasedPrisoners === "object") {
-        Object.keys(data.releasedPrisoners).forEach((key) => {
-          combinedReleasedArray.push({
-            id: key,
-            ...data.releasedPrisoners[key],
+        // التحقق مما إذا كانت البيانات تحتوي على مفتاح "releasedPrisoners"
+        if (data.releasedPrisoners && typeof data.releasedPrisoners === "object") {
+          // معالجة البيانات داخل releasedPrisoners
+          Object.keys(data.releasedPrisoners).forEach((key) => {
+            const prisoner = data.releasedPrisoners[key]
+            if (prisoner && prisoner.name && prisoner.name.trim() !== "") {
+              releasedArray.push({
+                id: key,
+                ...prisoner,
+              })
+            }
           })
-        })
+        } else {
+          // معالجة البيانات مباشرة تحت released-prisoners
+          Object.keys(data).forEach((key) => {
+            const prisoner = data[key]
+            if (prisoner && prisoner.name && prisoner.name.trim() !== "") {
+              releasedArray.push({
+                id: key,
+                ...prisoner,
+              })
+            }
+          })
+        }
       }
-
-      // Filter out records with empty names
-      const validReleasedPrisoners = combinedReleasedArray.filter(
-        (prisoner) => prisoner.name && prisoner.name.trim() !== "",
-      )
-
-      callback(validReleasedPrisoners)
+      
+      console.log(`تم استرجاع ${releasedArray.length} سجين مفرج عنه من قاعدة البيانات`) // للتشخيص
+      callback(releasedArray)
     } else {
+      console.log("لا توجد بيانات سجناء مفرج عنهم في قاعدة البيانات") // للتشخيص
       callback([])
     }
   })
