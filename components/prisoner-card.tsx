@@ -6,29 +6,46 @@ import { Badge } from "@/components/ui/badge"
 import { Calendar, MapPin, Phone, User, FileText, Edit, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/auth-context"
-import { deleteDoc, doc } from "firebase/firestore"
-import { db } from "@/lib/firebase"
 import { useState } from "react"
+import { deletePrisoner } from "@/lib/firebase-operations" // دالة حذف مركزية (Realtime DB)
 
 interface PrisonerCardProps {
   prisoner: Prisoner
-  onEdit: (prisoner: Prisoner) => void
+  onEdit?: (prisoner: Prisoner) => void
+  onDelete?: (prisonerId: string, prisonerName: string) => void
 }
 
-export default function PrisonerCard({ prisoner, onEdit }: PrisonerCardProps) {
+export default function PrisonerCard({ prisoner, onEdit, onDelete }: PrisonerCardProps) {
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`هل أنت متأكد من حذف السجين "${name}"؟`)) return
+  // لو الاب مرّر onDelete، نستخدمها (للتوافق مع الكود الأصلي)
+  // وإلا نحذف مباشرة من Realtime DB عبر deletePrisoner
+  const handleDeleteClick = async () => {
+    if (!prisoner?.id) return
+    if (!confirm(`هل أنت متأكد من حذف السجين "${prisoner.name}"؟`)) return
+
+    // لو الـ parent مرّر onDelete (مثل confirm dialog flow) نستخدمها
+    if (onDelete) {
+      try {
+        setLoading(true)
+        onDelete(prisoner.id, prisoner.name)
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
+    // خلاف ذلك: احذف من DB مباشرة
     try {
       setLoading(true)
-      await deleteDoc(doc(db, "prisoners", id))
-      alert("✅ تم حذف السجين بنجاح")
+      await deletePrisoner(prisoner.id)
+      // تحديث الواجهة: إما تعمل ريفريش خارجي أو تعتمد الـ listener الموجود في الصفحة
+      // هنا نعمل reload بسيط لو ما فيش استماع حي
       window.location.reload()
     } catch (error) {
-      console.error("❌ خطأ أثناء الحذف:", error)
-      alert("حدث خطأ أثناء الحذف")
+      console.error("Error deleting prisoner:", error)
+      alert("حدث خطأ أثناء الحذف. افتح Console وشوف الرسالة.")
     } finally {
       setLoading(false)
     }
@@ -44,19 +61,21 @@ export default function PrisonerCard({ prisoner, onEdit }: PrisonerCardProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onEdit(prisoner)}
+                onClick={() => onEdit && onEdit(prisoner)}
                 className="text-blue-600 border-blue-600 hover:bg-blue-600 hover:text-white"
               >
                 <Edit className="h-4 w-4" />
+                <span className="sr-only">تعديل</span>
               </Button>
               <Button
                 variant="destructive"
                 size="sm"
                 disabled={loading}
-                onClick={() => handleDelete(prisoner.id, prisoner.name)}
+                onClick={handleDeleteClick}
                 className="bg-red-600 hover:bg-red-700"
               >
                 <Trash2 className="h-4 w-4" />
+                <span className="sr-only">حذف</span>
               </Button>
             </div>
           )}
