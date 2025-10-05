@@ -2,9 +2,7 @@
 
 import { useAuth } from "@/lib/auth-context"
 import { useEffect, useState } from "react"
-import { database } from "@/lib/firebase"
-import { ref, onValue } from "firebase/database"
-import { deletePrisoner } from "@/lib/firebase-operations" // استيراد دالة الحذف
+import { deletePrisoner, listenToPrisoners } from "@/lib/firebase-operations" // استيراد الدوال الصحيحة
 import type { Prisoner } from "@/lib/types"
 import Navbar from "@/components/layout/navbar"
 import PrisonerCard from "@/components/prisoner-card"
@@ -40,20 +38,11 @@ export default function PrisonersPage() {
 
   useEffect(() => {
     if (user?.isAuthenticated) {
-      const prisonersRef = ref(database, "prisoners")
-      const unsubscribe = onValue(prisonersRef, (snapshot) => {
-        const data = snapshot.val()
-        if (data) {
-          const prisonersArray = Object.keys(data).map((key) => ({
-            id: key,
-            ...data[key],
-          }))
-          setPrisoners(prisonersArray)
-          setFilteredPrisoners(prisonersArray)
-        } else {
-          setPrisoners([])
-          setFilteredPrisoners([])
-        }
+      setLoading(true)
+      // استخدام الدالة المعدلة من firebase-operations.ts
+      const unsubscribe = listenToPrisoners((prisonersArray) => {
+        setPrisoners(prisonersArray)
+        setFilteredPrisoners(prisonersArray)
         setLoading(false)
       })
 
