@@ -12,9 +12,6 @@ export interface Prisoner {
   phone: string
   nationalId: string
   signature: string
-  // NEW FIELDS
-  childrenCount?: string
-  educationStatus?: string
 }
 
 export interface ReleasedPrisoner {
@@ -24,14 +21,14 @@ export interface ReleasedPrisoner {
   prison: string
   family: string
   residence: string
-  releaseDate: string
-  submissions: string
+  releaseDate?: string // جعلها اختيارية لأنها قد تكون ناقصة
+  submissions?: string // جعلها اختيارية لأنها تظهر في بعض السجلات
   phone: string
   nationalId: string
   signature: string
-  // NEW FIELDS
-  childrenCount?: string
-  educationStatus?: string
+  from?: string // حقول إضافية اختيارية
+  to?: string
+  years?: string
 }
 
 export interface User {
