@@ -19,12 +19,12 @@ interface EditReleasedPrisonerFormProps {
 }
 
 export default function EditReleasedPrisonerForm({ prisoner, onClose, onSuccess }: EditReleasedPrisonerFormProps) {
-  const [formData, setFormData] = useState<Omit<ReleasedPrisoner, "id">>(prisoner)
+  const [formData, setFormData] = useState<Omit<ReleasedPrisoner, "id">>({ ...prisoner });
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
   useEffect(() => {
-    setFormData(prisoner)
+    setFormData({ ...prisoner });
   }, [prisoner])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
