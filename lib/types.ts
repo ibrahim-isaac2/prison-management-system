@@ -21,14 +21,11 @@ export interface ReleasedPrisoner {
   prison: string
   family: string
   residence: string
-  releaseDate?: string // جعلها اختيارية لأنها قد تكون ناقصة
-  submissions?: string // جعلها اختيارية لأنها تظهر في بعض السجلات
+  releaseDate: string
+  submissions: string
   phone: string
   nationalId: string
   signature: string
-  from?: string // حقول إضافية اختيارية
-  to?: string
-  years?: string
 }
 
 export interface User {
